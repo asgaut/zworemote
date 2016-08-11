@@ -20,7 +20,7 @@ import "unsafe"
 /*
 #cgo CFLAGS: -I.
 //#cgo LDFLAGS: -lstdc++ –framework Foundation -lobjc.A -lusb-1.0 -L/Users/goddards/Documents/development/zworemote/src/zwoasi -lASICamera2 -v
-#cgo LDFLAGS: -lstdc++ -lusb-1.0 -L/Users/goddards/Documents/development/zworemote/src/zwoasi -lASICamera2 -v
+#cgo LDFLAGS: -lstdc++  -L/usr/local/lib -lusb-1.0 -L${SRCDIR} -lASICamera2 -v
 
 #include <stdio.h>
 #include <stdlib.h>
