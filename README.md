@@ -7,4 +7,5 @@ Web interface for ZWO ASI Cameras
 - go build src/zworemote.go
 - ./zworemote
 - Visit http://localhost:8080/img.png
-- 
+
+
