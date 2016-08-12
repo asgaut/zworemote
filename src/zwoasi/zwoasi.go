@@ -4,23 +4,25 @@
 
 package zwoasi
 
-import "bytes"
-import "fmt"
-import "os"
+//import "bytes"
+//import "fmt"
+//import "os"
 import "io"
 import "bufio"
 //import "math"
+import "strconv"
 import "image"
 //import "image/color"
 import "image/png"
 //import "image/jpeg"
-import "encoding/binary"
+//import "encoding/binary"
+import "encoding/json"
 import "unsafe"
 
 /*
 #cgo CFLAGS: -I.
 //#cgo LDFLAGS: -lstdc++ –framework Foundation -lobjc.A -lusb-1.0 -L/Users/goddards/Documents/development/zworemote/src/zwoasi -lASICamera2 -v
-#cgo LDFLAGS: -lstdc++  -L/usr/local/lib -lusb-1.0 -L${SRCDIR} -lASICamera2 -v
+#cgo LDFLAGS: -lstdc++ -L/usr/local/lib -lusb-1.0 -L${SRCDIR} -lASICamera2 -v
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,7 +32,25 @@ import "unsafe"
 
 #define MAX_CONTROL 7
 
-unsigned char* asiGetImage(char *fileName, int* width, int* height, int* len)  {
+int CamNum = 0;
+
+long asiGetTemperature()  {
+	if(ASIOpenCamera(CamNum) != ASI_SUCCESS) {
+		printf("OpenCamera error\n");
+    }
+
+	long ltemp = 0;
+	ASI_BOOL bAuto = ASI_FALSE;
+    ASI_ERROR_CODE err;
+	err = ASIGetControlValue(CamNum, ASI_TEMPERATURE, &ltemp, &bAuto);
+printf("%d error\n",err);
+
+	ASICloseCamera(CamNum);
+
+	return ltemp;
+}
+
+unsigned char* asiGetImage(char *fileName, int x, int y, int* width, int* height, int* len)  {
 	char* bayer[] = {"RG","BG","GR","GB"};
 	char* controls[MAX_CONTROL] = {"Exposure", "Gain", "Gamma", "WB_R", "WB_B", "Brightness", "USB Traffic"};
 
@@ -45,7 +65,7 @@ unsigned char* asiGetImage(char *fileName, int* width, int* height, int* len)  {
 		ASIGetCameraProperty(&ASICameraInfo, i);
 		printf("%d %s\n",i, ASICameraInfo.Name);
     }
-    int CamNum = 0;
+
 	if(ASIOpenCamera(CamNum) != ASI_SUCCESS) {
 		printf("OpenCamera error\n");
     }
@@ -69,6 +89,9 @@ unsigned char* asiGetImage(char *fileName, int* width, int* height, int* len)  {
 		printf("%s\n", ControlCaps.Name);
 	}
 
+    ASISetROIFormat(CamNum, 640, 480,  1, ASI_IMG_RAW8);
+    ASISetStartPos(CamNum, x, y);
+
 	int imageWidth;
 	int imageHeight;
 	int bin = 1;
@@ -80,11 +103,6 @@ unsigned char* asiGetImage(char *fileName, int* width, int* height, int* len)  {
     *width = imageWidth;
     *height = imageHeight;
     *len = imageWidth * imageHeight;
- 
-	long ltemp = 0;
-	ASI_BOOL bAuto = ASI_FALSE;
-	ASIGetControlValue(CamNum, ASI_TEMPERATURE, &ltemp, &bAuto);
-	printf("sensor temperature:%02f\n", (float)ltemp/10.0);
 
     int imageSize = ASICameraInfo.MaxWidth * ASICameraInfo.MaxHeight; //Assume RAW8
     printf("Image size %d\n", imageSize);
@@ -127,77 +145,53 @@ unsigned char* asiGetImage(char *fileName, int* width, int* height, int* len)  {
 */
 import "C"
 
+func GetTemperature() float64 {
+    var valueC C.long
+    valueC = C.asiGetTemperature()
+    value := float64(valueC)
+    return value
+}
 
+func GetStats() map[string]string {
+    stats := map[string]string{}
 
-type GrayFloat64 struct  {
-    //maximum pixel value to allow scaling to 16 bits
-    MaxPixel float64
-    Pix []float64
-    Stride int
-    Rect image.Rectangle
+    stats["temerature"] = strconv.FormatFloat(GetTemperature(), 'E', -1, 32)
+
+    return stats
 }
 
 
-func GetImage(fileName string) image.Image  {
+func GetImage(x int, y int, widthOut int, heightOut int) image.Image  {
     var widthC C.int
     var heightC C.int
     var lenC C.int
-    greyCBytes := C.asiGetImage(C.CString(fileName), &widthC, &heightC, &lenC)
+    greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), &widthC, &heightC, &lenC)
     greyBytes := C.GoBytes(unsafe.Pointer(greyCBytes), lenC)
 
     width := int(widthC)
     height := int(heightC)
-    len := int(lenC)
+//    len := int(lenC)
 
-
-f, err := os.OpenFile("x.png", os.O_CREATE|os.O_WRONLY, 0666)
-if err != nil {
-    fmt.Println("file open error: ", err)
-}
-img := image.NewGray(image.Rect(0, 0, width, height))
-img.Pix = greyBytes
-
-err = png.Encode(f, img)
-if err != nil {
-    fmt.Println("png.Encode error: ",err)
-}
-fmt.Println("png written")
-
-    maxPixel := 0.0
-    var pixel float64
-    floatLen := len / 8
-    buf := bytes.NewReader(greyBytes)
-    var greyFloats = make([]float64, floatLen)
-    for i := 0; i < floatLen; i++ {
-        err := binary.Read(buf, binary.LittleEndian, &pixel)
-        if err != nil {
-            fmt.Println("binary.Read failed:", err)
-        }
-        greyFloats[i] = pixel
-        if (pixel > maxPixel)  {
-            maxPixel = pixel
-        }
-    }
-
-/*
-    greyImage := GrayFloat64{
-        MaxPixel:maxPixel,
-        Pix:greyFloats,
-        Stride:width,
-        Rect:image.Rect(0, 0, width, height),
-    }
-*/
+    img := image.NewGray(image.Rect(0, 0, width, height))
+    img.Pix = greyBytes
 
     C.free(unsafe.Pointer(greyCBytes))
     
     return img
 }
 
-func WriteImage(width int, height int, imageWriter io.Writer)  {
-    greyImage := GetImage("whatever")
+func WriteImage(x int, y int, width int, height int, imageWriter io.Writer)  {
+    greyImage := GetImage(x, y, width, height)
 
     bufWriter := bufio.NewWriter(imageWriter)
     png.Encode(bufWriter, greyImage)
     bufWriter.Flush()
 }
 
+func WriteStats(jsonWriter io.Writer)  {
+    camStats := GetStats()
+    camStatsJSON, _ := json.Marshal(camStats)
+    bufWriter := bufio.NewWriter(jsonWriter)
+    bufWriter.WriteString(string(camStatsJSON))
+    bufWriter.Flush()
+}

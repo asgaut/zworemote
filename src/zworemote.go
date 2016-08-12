@@ -14,6 +14,7 @@ import "flag"
 //import "path/filepath"
 //import "strings"
 //import "bufio"
+import "strconv"
 import "net/http"
 import "log"
 import "zwoasi"
@@ -30,15 +31,21 @@ func main() {
     })
 
     http.HandleFunc("/zworemote/img.png", func(w http.ResponseWriter, r *http.Request) {
-//        object := r.FormValue("o")
+        x, err := strconv.Atoi(r.FormValue("x"))
+        y, err := strconv.Atoi(r.FormValue("y"))
+        log.Print(err)
         w.Header().Set("Content-Type", "image/png")
-        zwoasi.WriteImage(640, 480, w)
+        zwoasi.WriteImage(x, y, 640, 480, w)
+
+    })
+
+    http.HandleFunc("/zworemote/cam.json", func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
+        zwoasi.WriteStats(w)
 
     })
 
     log.Print("http.ListenAndServe")
     log.Fatal(http.ListenAndServe(":8080", nil))
 
-
-    zwoasi.GetImage("pleides")
 }
