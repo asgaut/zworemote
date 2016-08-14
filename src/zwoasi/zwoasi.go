@@ -38,71 +38,71 @@ char* controls[MAX_CONTROL] = {"Exposure", "Gain", "Gamma", "WB_R", "WB_B", "Bri
 int CamNum = 0;
 
 void asiOpenCamera()  {
-	int numDevices = ASIGetNumOfConnectedCameras();
-	ASI_CAMERA_INFO ASICameraInfo;
+    int numDevices = ASIGetNumOfConnectedCameras();
+    ASI_CAMERA_INFO ASICameraInfo;
 
-	for(int i = 0; i < numDevices; i++) {
-		ASIGetCameraProperty(&ASICameraInfo, i);
-		printf("%d %s\n",i, ASICameraInfo.Name);
+    for(int i = 0; i < numDevices; i++) {
+        ASIGetCameraProperty(&ASICameraInfo, i);
+        printf("%d %s\n",i, ASICameraInfo.Name);
     }
 
-	if(ASIOpenCamera(CamNum) != ASI_SUCCESS) {
-		printf("OpenCamera error\n");
+    if(ASIOpenCamera(CamNum) != ASI_SUCCESS) {
+        printf("OpenCamera error\n");
     }
-	printf("%s information\n",ASICameraInfo.Name);
-	int iMaxWidth, iMaxHeight;
-	iMaxWidth = ASICameraInfo.MaxWidth;
-	iMaxHeight =  ASICameraInfo.MaxHeight;
-	printf("resolution:%dX%d\n", iMaxWidth, iMaxHeight);
-	if(ASICameraInfo.IsColorCam) {
-		printf("Color Camera: bayer pattern:%s\n",bayer[ASICameraInfo.BayerPattern]);
+    printf("%s information\n",ASICameraInfo.Name);
+    int iMaxWidth, iMaxHeight;
+    iMaxWidth = ASICameraInfo.MaxWidth;
+    iMaxHeight =  ASICameraInfo.MaxHeight;
+    printf("resolution:%dX%d\n", iMaxWidth, iMaxHeight);
+    if(ASICameraInfo.IsColorCam) {
+        printf("Color Camera: bayer pattern:%s\n",bayer[ASICameraInfo.BayerPattern]);
     } else {
-		printf("Mono camera\n");
+        printf("Mono camera\n");
     }
 
-	ASI_CONTROL_CAPS ControlCaps;
-	int iNumOfCtrl = 0;
-	ASIGetNumOfControls(CamNum, &iNumOfCtrl);
-	for ( int i = 0; i < iNumOfCtrl; i++)
-	{
-		ASIGetControlCaps(CamNum, i, &ControlCaps);
-		printf("%s\n", ControlCaps.Name);
-	}
+    ASI_CONTROL_CAPS ControlCaps;
+    int iNumOfCtrl = 0;
+    ASIGetNumOfControls(CamNum, &iNumOfCtrl);
+    for ( int i = 0; i < iNumOfCtrl; i++)
+    {
+        ASIGetControlCaps(CamNum, i, &ControlCaps);
+        printf("%s\n", ControlCaps.Name);
+    }
 }
 
 void asiCloseCamera()  {
-	ASICloseCamera(CamNum);
+    ASICloseCamera(CamNum);
 }
 
 long asiGetTemperature()  {
-	if(ASIOpenCamera(CamNum) != ASI_SUCCESS) {
-		printf("OpenCamera error\n");
+    if(ASIOpenCamera(CamNum) != ASI_SUCCESS) {
+        printf("OpenCamera error\n");
     }
 
-	long ltemp = 0;
+    long ltemp = 0;
     ASI_BOOL bAuto = ASI_FALSE;
     ASI_ERROR_CODE err;
     err = ASIGetControlValue(CamNum, ASI_TEMPERATURE, &ltemp, &bAuto);
 
-	ASICloseCamera(CamNum);
+    ASICloseCamera(CamNum);
 
-	return ltemp;
+    return ltemp;
 }
 
 unsigned char* asiGetImage(char *fileName, int x, int y, long exposure, int* width, int* height, int* len)  {
 
-	bool bresult;
+    bool bresult;
 
-	ASI_CAMERA_INFO ASICameraInfo;
+    ASI_CAMERA_INFO ASICameraInfo;
 
     ASIGetCameraProperty(&ASICameraInfo, CamNum);
 
     ASISetROIFormat(CamNum, 640, 480,  1, ASI_IMG_RAW8);
     ASISetStartPos(CamNum, x, y);
 
-	int imageWidth;
-	int imageHeight;
-	int bin = 1;
+    int imageWidth;
+    int imageHeight;
+    int bin = 1;
     int imageType;
 
     ASIGetROIFormat(CamNum, &imageWidth, &imageHeight, &bin, (ASI_IMG_TYPE*)&imageType);
@@ -120,13 +120,13 @@ unsigned char* asiGetImage(char *fileName, int x, int y, long exposure, int* wid
 
     printf("Setting exposure\n");
 
-	ASISetControlValue(CamNum, ASI_GAIN, 500, ASI_FALSE);
-	ASISetControlValue(CamNum, ASI_EXPOSURE, exposure * 1000, ASI_FALSE);
-	ASISetControlValue(CamNum, ASI_BANDWIDTHOVERLOAD, 45, ASI_FALSE);
+    ASISetControlValue(CamNum, ASI_GAIN, 500, ASI_FALSE);
+    ASISetControlValue(CamNum, ASI_EXPOSURE, exposure * 1000, ASI_FALSE);
+    ASISetControlValue(CamNum, ASI_BANDWIDTHOVERLOAD, 45, ASI_FALSE);
 
     printf("Taking exposure\n");
 
-	ASI_EXPOSURE_STATUS status;
+    ASI_EXPOSURE_STATUS status;
     int loopCount = 0;
     ASIStartExposure(CamNum, ASI_FALSE);
     usleep(10000);//10ms
@@ -142,7 +142,7 @@ unsigned char* asiGetImage(char *fileName, int x, int y, long exposure, int* wid
         ASIGetDataAfterExp(CamNum, (unsigned char*)imageData, imageSize);
     }
 
-	ASIStopExposure(CamNum);
+    ASIStopExposure(CamNum);
 
     printf("returning imageData\n");
 
