@@ -32,32 +32,12 @@ import "unsafe"
 
 #define MAX_CONTROL 7
 
+char* bayer[] = {"RG","BG","GR","GB"};
+char* controls[MAX_CONTROL] = {"Exposure", "Gain", "Gamma", "WB_R", "WB_B", "Brightness", "USB Traffic"};
+
 int CamNum = 0;
 
-long asiGetTemperature()  {
-	if(ASIOpenCamera(CamNum) != ASI_SUCCESS) {
-		printf("OpenCamera error\n");
-    }
-
-	long ltemp = 0;
-	ASI_BOOL bAuto = ASI_FALSE;
-    ASI_ERROR_CODE err;
-	err = ASIGetControlValue(CamNum, ASI_TEMPERATURE, &ltemp, &bAuto);
-printf("%d error\n",err);
-
-	ASICloseCamera(CamNum);
-
-	return ltemp;
-}
-
-unsigned char* asiGetImage(char *fileName, int x, int y, int* width, int* height, int* len)  {
-	char* bayer[] = {"RG","BG","GR","GB"};
-	char* controls[MAX_CONTROL] = {"Exposure", "Gain", "Gamma", "WB_R", "WB_B", "Brightness", "USB Traffic"};
-
-	bool bresult;
-    unsigned char *pixelss;
-    pixelss = (unsigned char *) malloc(*len);
-
+void asiOpenCamera()  {
 	int numDevices = ASIGetNumOfConnectedCameras();
 	ASI_CAMERA_INFO ASICameraInfo;
 
@@ -88,6 +68,34 @@ unsigned char* asiGetImage(char *fileName, int x, int y, int* width, int* height
 		ASIGetControlCaps(CamNum, i, &ControlCaps);
 		printf("%s\n", ControlCaps.Name);
 	}
+}
+
+void asiCloseCamera()  {
+	ASICloseCamera(CamNum);
+}
+
+long asiGetTemperature()  {
+	if(ASIOpenCamera(CamNum) != ASI_SUCCESS) {
+		printf("OpenCamera error\n");
+    }
+
+	long ltemp = 0;
+    ASI_BOOL bAuto = ASI_FALSE;
+    ASI_ERROR_CODE err;
+    err = ASIGetControlValue(CamNum, ASI_TEMPERATURE, &ltemp, &bAuto);
+
+	ASICloseCamera(CamNum);
+
+	return ltemp;
+}
+
+unsigned char* asiGetImage(char *fileName, int x, int y, long exposure, int* width, int* height, int* len)  {
+
+	bool bresult;
+
+	ASI_CAMERA_INFO ASICameraInfo;
+
+    ASIGetCameraProperty(&ASICameraInfo, CamNum);
 
     ASISetROIFormat(CamNum, 640, 480,  1, ASI_IMG_RAW8);
     ASISetStartPos(CamNum, x, y);
@@ -113,7 +121,7 @@ unsigned char* asiGetImage(char *fileName, int x, int y, int* width, int* height
     printf("Setting exposure\n");
 
 	ASISetControlValue(CamNum, ASI_GAIN, 500, ASI_FALSE);
-	ASISetControlValue(CamNum, ASI_EXPOSURE, 1 * 1000*1000, ASI_FALSE);
+	ASISetControlValue(CamNum, ASI_EXPOSURE, exposure * 1000, ASI_FALSE);
 	ASISetControlValue(CamNum, ASI_BANDWIDTHOVERLOAD, 45, ASI_FALSE);
 
     printf("Taking exposure\n");
@@ -135,7 +143,6 @@ unsigned char* asiGetImage(char *fileName, int x, int y, int* width, int* height
     }
 
 	ASIStopExposure(CamNum);
-	ASICloseCamera(CamNum);
 
     printf("returning imageData\n");
 
@@ -144,6 +151,14 @@ unsigned char* asiGetImage(char *fileName, int x, int y, int* width, int* height
 
 */
 import "C"
+
+func OpenCamera() {
+    C.asiOpenCamera()
+}
+
+func CloseCamera() {
+    C.asiCloseCamera()
+}
 
 func GetTemperature() float64 {
     var valueC C.long
@@ -161,11 +176,11 @@ func GetStats() map[string]string {
 }
 
 
-func GetImage(x int, y int, widthOut int, heightOut int) image.Image  {
+func GetImage(x int, y int, widthOut int, heightOut int, exposure float64) image.Image  {
     var widthC C.int
     var heightC C.int
     var lenC C.int
-    greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), &widthC, &heightC, &lenC)
+    greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), C.long(exposure), &widthC, &heightC, &lenC)
     greyBytes := C.GoBytes(unsafe.Pointer(greyCBytes), lenC)
 
     width := int(widthC)
@@ -180,8 +195,11 @@ func GetImage(x int, y int, widthOut int, heightOut int) image.Image  {
     return img
 }
 
-func WriteImage(x int, y int, width int, height int, imageWriter io.Writer)  {
-    greyImage := GetImage(x, y, width, height)
+func WriteImage(x int, y int, width int, height int, exposure float64, imageWriter io.Writer)  {
+    if (exposure == 0.0) {
+        exposure = 300.0
+    }
+    greyImage := GetImage(x, y, width, height, exposure)
 
     bufWriter := bufio.NewWriter(imageWriter)
     png.Encode(bufWriter, greyImage)
