@@ -89,7 +89,7 @@ long asiGetTemperature()  {
     return ltemp;
 }
 
-unsigned char* asiGetImage(char *fileName, int x, int y, long exposure, int* width, int* height, int* len)  {
+unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, long exposure, int* widthFound, int* heightFound, int* len)  {
 
     bool bresult;
 
@@ -97,8 +97,15 @@ unsigned char* asiGetImage(char *fileName, int x, int y, long exposure, int* wid
 
     ASIGetCameraProperty(&ASICameraInfo, CamNum);
 
-    ASISetROIFormat(CamNum, 640, 480,  1, ASI_IMG_RAW8);
+    if (width == 0) {
+        width = ASICameraInfo.MaxWidth;
+        height = ASICameraInfo.MaxHeight;
+        printf("setting max wxh %dx%d\n", width, height);
+    }
+
+    ASISetROIFormat(CamNum, width, height,  1, ASI_IMG_RAW8);
     ASISetStartPos(CamNum, x, y);
+    printf("setting origin %dx%d wxh %dx%d\n", x, y, width, height);
 
     int imageWidth;
     int imageHeight;
@@ -108,8 +115,8 @@ unsigned char* asiGetImage(char *fileName, int x, int y, long exposure, int* wid
     ASIGetROIFormat(CamNum, &imageWidth, &imageHeight, &bin, (ASI_IMG_TYPE*)&imageType);
     printf("ASIGetROIFormat %dx%d %d\n", imageWidth, imageHeight, imageType);
 
-    *width = imageWidth;
-    *height = imageHeight;
+    *widthFound = imageWidth;
+    *heightFound = imageHeight;
     *len = imageWidth * imageHeight;
 
     int imageSize = ASICameraInfo.MaxWidth * ASICameraInfo.MaxHeight; //Assume RAW8
@@ -176,18 +183,18 @@ func GetStats() map[string]string {
 }
 
 
-func GetImage(x int, y int, widthOut int, heightOut int, exposure float64) image.Image  {
+func GetImage(x int, y int, width int, height int, exposure float64) image.Image  {
     var widthC C.int
     var heightC C.int
     var lenC C.int
-    greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), C.long(exposure), &widthC, &heightC, &lenC)
+    greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), C.int(width), C.int(height), C.long(exposure), &widthC, &heightC, &lenC)
     greyBytes := C.GoBytes(unsafe.Pointer(greyCBytes), lenC)
 
-    width := int(widthC)
-    height := int(heightC)
+    widthFound := int(widthC)
+    heightFound := int(heightC)
 //    len := int(lenC)
 
-    img := image.NewGray(image.Rect(0, 0, width, height))
+    img := image.NewGray(image.Rect(0, 0, widthFound, heightFound))
     img.Pix = greyBytes
 
     C.free(unsafe.Pointer(greyCBytes))
@@ -195,10 +202,12 @@ func GetImage(x int, y int, widthOut int, heightOut int, exposure float64) image
     return img
 }
 
-func WriteImage(x int, y int, width int, height int, exposure float64, imageWriter io.Writer)  {
+func WriteImage(origin image.Point, width int, height int, exposure float64, imageWriter io.Writer)  {
     if (exposure == 0.0) {
         exposure = 300.0
     }
+    x := origin.X
+    y := origin.Y
     greyImage := GetImage(x, y, width, height, exposure)
 
     bufWriter := bufio.NewWriter(imageWriter)

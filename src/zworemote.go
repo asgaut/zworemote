@@ -8,6 +8,7 @@ import "fmt"
 import "flag"
 //import "net"
 //import "io/ioutil"
+import "image"
 import "os"
 import "os/signal"
 //import "os/exec"
@@ -33,7 +34,7 @@ func main() {
     go func(){
         for _ = range sigChan {
             zwoasi.CloseCamera()
-            fmt.Println("killed ")
+            fmt.Println("Camera closed.")
             os.Exit(0)
         }
     }()
@@ -45,10 +46,13 @@ func main() {
     http.HandleFunc("/zworemote/img.png", func(w http.ResponseWriter, r *http.Request) {
         x, err := strconv.Atoi(r.FormValue("x"))
         y, err := strconv.Atoi(r.FormValue("y"))
+        origin := image.Point{x, y}
+        width, err := strconv.Atoi(r.FormValue("w"))
+        height, err := strconv.Atoi(r.FormValue("h"))
         e, err := strconv.ParseFloat(r.FormValue("e"), 32)
         log.Print(err)
         w.Header().Set("Content-Type", "image/png")
-        zwoasi.WriteImage(x, y, 640, 480, e, w)
+        zwoasi.WriteImage(origin, width, height, e, w)
 
     })
 
