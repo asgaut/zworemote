@@ -8,6 +8,7 @@ import "fmt"
 import "flag"
 //import "net"
 //import "io/ioutil"
+import "io"
 import "image"
 import "os"
 import "os/signal"
@@ -43,17 +44,14 @@ func main() {
         fmt.Fprintf(w, zworemote.ClientHTML)
     })
 
-    http.HandleFunc("/zworemote/img.png", func(w http.ResponseWriter, r *http.Request) {
-        x, err := strconv.Atoi(r.FormValue("x"))
-        y, err := strconv.Atoi(r.FormValue("y"))
-        origin := image.Point{x, y}
-        width, err := strconv.Atoi(r.FormValue("w"))
-        height, err := strconv.Atoi(r.FormValue("h"))
-        e, err := strconv.ParseFloat(r.FormValue("e"), 32)
-        log.Print(err)
+    http.HandleFunc("/zworemote/cam.png", func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "image/png")
-        zwoasi.WriteImage(origin, width, height, e, w)
+        handleImageRequest(zwoasi.WritePNGImage, w, r)
+    })
 
+    http.HandleFunc("/zworemote/cam.jpg", func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "image/jpeg")
+        handleImageRequest(zwoasi.WriteJPGImage, w, r)
     })
 
     http.HandleFunc("/zworemote/cam.json", func(w http.ResponseWriter, r *http.Request) {
@@ -65,4 +63,15 @@ func main() {
     log.Print("http.ListenAndServe")
     log.Fatal(http.ListenAndServe(":8080", nil))
 
+}
+
+func handleImageRequest(writerFunc func(origin image.Point, width int, height int, exposure float64, imageWriter io.Writer), w http.ResponseWriter, r *http.Request) {
+    x, err := strconv.Atoi(r.FormValue("x"))
+    y, err := strconv.Atoi(r.FormValue("y"))
+    origin := image.Point{x, y}
+    width, err := strconv.Atoi(r.FormValue("w"))
+    height, err := strconv.Atoi(r.FormValue("h"))
+    e, err := strconv.ParseFloat(r.FormValue("e"), 64)
+    log.Print(err)
+    writerFunc(origin, width, height, e, w)
 }

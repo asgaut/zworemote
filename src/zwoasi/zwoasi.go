@@ -5,7 +5,7 @@
 package zwoasi
 
 //import "bytes"
-//import "fmt"
+import "fmt"
 //import "os"
 import "io"
 import "bufio"
@@ -14,7 +14,7 @@ import "strconv"
 import "image"
 //import "image/color"
 import "image/png"
-//import "image/jpeg"
+import "image/jpeg"
 //import "encoding/binary"
 import "encoding/json"
 import "unsafe"
@@ -89,7 +89,7 @@ long asiGetTemperature()  {
     return ltemp;
 }
 
-unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, long exposure, int* widthFound, int* heightFound, int* len)  {
+unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, double exposure, int* widthFound, int* heightFound, int* len)  {
 
     bool bresult;
 
@@ -125,7 +125,7 @@ unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, 
     unsigned char* imageData;
     imageData = (unsigned char*) malloc(imageSize);
 
-    printf("Setting exposure\n");
+    printf("Setting exposure %f\n", exposure);
 
     ASISetControlValue(CamNum, ASI_GAIN, 500, ASI_FALSE);
     ASISetControlValue(CamNum, ASI_EXPOSURE, exposure * 1000, ASI_FALSE);
@@ -187,7 +187,8 @@ func GetImage(x int, y int, width int, height int, exposure float64) image.Image
     var widthC C.int
     var heightC C.int
     var lenC C.int
-    greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), C.int(width), C.int(height), C.long(exposure), &widthC, &heightC, &lenC)
+
+    greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), C.int(width), C.int(height), C.double(exposure), &widthC, &heightC, &lenC)
     greyBytes := C.GoBytes(unsafe.Pointer(greyCBytes), lenC)
 
     widthFound := int(widthC)
@@ -202,7 +203,15 @@ func GetImage(x int, y int, width int, height int, exposure float64) image.Image
     return img
 }
 
-func WriteImage(origin image.Point, width int, height int, exposure float64, imageWriter io.Writer)  {
+func WritePNGImage(origin image.Point, width int, height int, exposure float64, imageWriter io.Writer)  {
+    writeEncodedImage(encodePNG, origin, width, height, exposure, imageWriter)
+}
+
+func WriteJPGImage(origin image.Point, width int, height int, exposure float64, imageWriter io.Writer)  {
+    writeEncodedImage(encodeJPG, origin, width, height, exposure, imageWriter)
+}
+
+func writeEncodedImage(encoder func (imageWriter io.Writer, image image.Image), origin image.Point, width int, height int, exposure float64, imageWriter io.Writer)  {
     if (exposure == 0.0) {
         exposure = 300.0
     }
@@ -211,8 +220,16 @@ func WriteImage(origin image.Point, width int, height int, exposure float64, ima
     greyImage := GetImage(x, y, width, height, exposure)
 
     bufWriter := bufio.NewWriter(imageWriter)
-    png.Encode(bufWriter, greyImage)
+    encoder(bufWriter, greyImage)
     bufWriter.Flush()
+}
+
+func encodePNG(imageWriter io.Writer, image image.Image) {
+    png.Encode(imageWriter, image)
+}
+
+func encodeJPG(imageWriter io.Writer, image image.Image) {
+    jpeg.Encode(imageWriter, image, &jpeg.Options{Quality: 90})
 }
 
 func WriteStats(jsonWriter io.Writer)  {
