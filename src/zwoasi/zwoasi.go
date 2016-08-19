@@ -177,7 +177,7 @@ func GetTemperature() float64 {
 func GetStats() map[string]string {
     stats := map[string]string{}
 
-    stats["temerature"] = strconv.FormatFloat(GetTemperature(), 'E', -1, 32)
+    stats["temperature"] = strconv.FormatFloat(GetTemperature(), 'E', -1, 32)
 
     return stats
 }
@@ -217,6 +217,7 @@ func writeEncodedImage(encoder func (imageWriter io.Writer, image image.Image), 
     }
     x := origin.X
     y := origin.Y
+
     greyImage := GetImage(x, y, width, height, exposure)
 
     bufWriter := bufio.NewWriter(imageWriter)

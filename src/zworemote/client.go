@@ -150,7 +150,10 @@ package zworemote
 
         function updateCam() {
             var camImg = document.getElementById("cam");
-            camImg.src = "cam.jpg?" + new Date().getTime();
+            var params = getQueryParams();
+            var e = params["e"];
+            var eClause = e ? "&e=" + e : "";
+            camImg.src = "cam.jpg?" + eClause + "&" + new Date().getTime();
         }
         function showMarker(name) {
             clearMarkers();
@@ -162,6 +165,12 @@ package zworemote
                if (!marker.childNodes[i].style) { continue; };
                marker.childNodes[i].style["opacity"] = 0;
             }
+        }
+        function getScaledCoordinates(img, coords) {
+            return {
+                x: Math.round(coords.x * img.naturalWidth / img.width),
+                y: Math.round(coords.y * img.naturalHeight / img.height)
+            };
         }
         function getClickPosition(e) {
             var parentPosition = getPosition(e.currentTarget);
@@ -181,6 +190,16 @@ package zworemote
                 element = element.offsetParent;
             }
             return { x: x, y: y };
+        }
+        function getQueryParams() {
+            var qString = document.location.search.substring(1);
+            var pairs = qString.split("&");
+            var params = {};
+            for (i = 0; i < pairs.length; i++)  {
+                var pair = pairs[i].split("=");
+                params[pair[0]] = pair[1];
+            }
+            return params;
         }
         var startX = 0;
         var startY = 0;
@@ -206,14 +225,36 @@ package zworemote
                 "brightness(" + camBrightness + ") contrast(" + camContrast + ")";
         }
         function imageClick(event) {
+            clearTimeout(zoomTimer);
             var imgClick = getClickPosition(event);
-            ws.send(JSON.stringify({method: "set_lock_position",
-                params: [imgClick.x, imgClick.y], id: 42}));
+//            ws.send(JSON.stringify({method: "set_lock_position",
+//                params: [imgClick.x, imgClick.y], id: 42}));
+
+            updateZoom(imgClick.x, imgClick.y);
             var marker = document.getElementById("marker");
             marker.style.top = imgClick.y - 10;
             marker.style.left = imgClick.x - 10;
             showMarker("select");
         };
+        var zoomTimer;
+        function updateZoom(x, y) {
+            var params = getQueryParams();
+            var e = params["e"];
+            var eClause = e ? "&e=" + e : "";
+            var zoomElement = document.getElementById("zoom");
+            var camElement = document.getElementById("cam");
+            zoomElement.style.top = y - 120 + "px";
+            zoomElement.style.left = x - 160 + "px";
+            var coords = getScaledCoordinates(camElement, {x: x, y: y});
+            if (coords.x >= 320) {
+                coords.x -= 320;
+            }
+            if (coords.y >= 240) {
+                coords.y -= 240;
+            }
+            zoomElement.src = src="cam.jpg?" + eClause + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y;
+            zoomTimer = setTimeout(function() { updateZoom(x, y); }, 100);
+        }
         function guide() {
             console.log("guide");
             ws.send(JSON.stringify({method:"guide",
@@ -392,15 +433,20 @@ package zworemote
         window.onresize = function(event)  {
             adjustSizes();
         }
+        window.onload = function() {
+            updateCam();
+        }
         </script>
     </head>
     <body>
     <div class="imgBox" onclick="imageDispatch(event)">
-        <img id="cam" src="cam.jpg" onclick="imageClick(event)" onload="adjustSizes()"
-            style="-webkit-filter:brightness(140%%)contrast(300%%);position: relative; top: 0; left: 0;">
+        <img id="cam" src="cam.jpg?e=5" onclick="imageClick(event)" onload="adjustSizes()"
+            style="-webkit-filter:brightness(140%%)contrast(300%%);position: relative; top: 0; left: 0;height:100%%;">
         <img id="solvedfield" onload="adjustSizes()" onclick="solvedClick(event)"
             onerror="this.style.display='none';"
             style="position: absolute; top: 0; left: 0;">
+        <img id="zoom"
+            style="-webkit-filter:brightness(140%%)contrast(300%%);position: absolute; top: 0; left: 0;width:320px;height:240px;">
         <svg id="bull" width="100%%" height="100%%" style="opacity:0; position: absolute; top: 0; left: 0;">
             <g >
                 <line x1="0px" y1="50%%" x2="100%%" y2="50%%" stroke="red" stroke-width="1" />
