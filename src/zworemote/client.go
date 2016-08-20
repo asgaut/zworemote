@@ -20,6 +20,13 @@ package zworemote
             bottom:10px;
             right:10px;
           }
+          .bldisplay {
+            color: red;
+            font-size:20px;
+            position:fixed;
+            bottom:10px;
+            left:10px;
+          }
           .trcontrols {
             position:fixed;
             top:10px;
@@ -439,6 +446,12 @@ package zworemote
         }
         window.onload = function() {
             updateCam();
+            httpGet("cam.json", function(text) {
+                var display = document.getElementById("bldisplay");
+                var stats = JSON.parse(text);
+                display.innerHTML = parseFloat(stats["temperature"]) + " &deg;C";
+            });
+
         }
         </script>
     </head>
@@ -562,6 +575,8 @@ package zworemote
             </svg>
         </a>
       </div>
+    </div>
+    <div id="bldisplay" class="bldisplay" >
     </div>
     </body>
 </html>

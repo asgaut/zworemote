@@ -76,18 +76,13 @@ void asiCloseCamera()  {
 }
 
 long asiGetTemperature()  {
-    if(ASIOpenCamera(CamNum) != ASI_SUCCESS) {
-        printf("OpenCamera error\n");
-    }
 
     long ltemp = 0;
     ASI_BOOL bAuto = ASI_FALSE;
     ASI_ERROR_CODE err;
     err = ASIGetControlValue(CamNum, ASI_TEMPERATURE, &ltemp, &bAuto);
 
-    ASICloseCamera(CamNum);
-
-    return ltemp;
+    return ltemp / 10;
 }
 
 unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, double exposure, double gain, int* widthFound, int* heightFound, int* len)  {
@@ -172,7 +167,9 @@ func CloseCamera() {
 
 func GetTemperature() float64 {
     var valueC C.long
+    mutex.Lock()
     valueC = C.asiGetTemperature()
+    mutex.Unlock()
     value := float64(valueC)
     return value
 }
