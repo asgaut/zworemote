@@ -11,6 +11,7 @@ import "io"
 import "bufio"
 //import "math"
 import "strconv"
+import "sync"
 import "image"
 //import "image/color"
 import "image/png"
@@ -89,7 +90,7 @@ long asiGetTemperature()  {
     return ltemp;
 }
 
-unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, double exposure, int* widthFound, int* heightFound, int* len)  {
+unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, double exposure, double gain, int* widthFound, int* heightFound, int* len)  {
 
     bool bresult;
 
@@ -125,9 +126,9 @@ unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, 
     unsigned char* imageData;
     imageData = (unsigned char*) malloc(imageSize);
 
-    printf("Setting exposure %f\n", exposure);
+    printf("Setting exposure %f gain %f\n", exposure, gain);
 
-    ASISetControlValue(CamNum, ASI_GAIN, 500, ASI_FALSE);
+    ASISetControlValue(CamNum, ASI_GAIN, gain, ASI_FALSE);
     ASISetControlValue(CamNum, ASI_EXPOSURE, exposure * 1000, ASI_FALSE);
     ASISetControlValue(CamNum, ASI_BANDWIDTHOVERLOAD, 45, ASI_FALSE);
 
@@ -159,6 +160,8 @@ unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, 
 */
 import "C"
 
+var mutex = &sync.Mutex{}
+
 func OpenCamera() {
     C.asiOpenCamera()
 }
@@ -183,12 +186,14 @@ func GetStats() map[string]string {
 }
 
 
-func GetImage(x int, y int, width int, height int, exposure float64) image.Image  {
+func GetImage(x int, y int, width int, height int, exposure float64, gain float64) image.Image  {
     var widthC C.int
     var heightC C.int
     var lenC C.int
 
-    greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), C.int(width), C.int(height), C.double(exposure), &widthC, &heightC, &lenC)
+    mutex.Lock()
+    greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), C.int(width), C.int(height), C.double(exposure), C.double(gain), &widthC, &heightC, &lenC)
+    mutex.Unlock()
     greyBytes := C.GoBytes(unsafe.Pointer(greyCBytes), lenC)
 
     widthFound := int(widthC)
@@ -203,22 +208,25 @@ func GetImage(x int, y int, width int, height int, exposure float64) image.Image
     return img
 }
 
-func WritePNGImage(origin image.Point, width int, height int, exposure float64, imageWriter io.Writer)  {
-    writeEncodedImage(encodePNG, origin, width, height, exposure, imageWriter)
+func WritePNGImage(origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer)  {
+    writeEncodedImage(encodePNG, origin, width, height, exposure, gain, imageWriter)
 }
 
-func WriteJPGImage(origin image.Point, width int, height int, exposure float64, imageWriter io.Writer)  {
-    writeEncodedImage(encodeJPG, origin, width, height, exposure, imageWriter)
+func WriteJPGImage(origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer)  {
+    writeEncodedImage(encodeJPG, origin, width, height, exposure, gain, imageWriter)
 }
 
-func writeEncodedImage(encoder func (imageWriter io.Writer, image image.Image), origin image.Point, width int, height int, exposure float64, imageWriter io.Writer)  {
+func writeEncodedImage(encoder func (imageWriter io.Writer, image image.Image), origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer)  {
     if (exposure == 0.0) {
         exposure = 300.0
+    }
+    if (gain == 0.0) {
+        gain = 1.0
     }
     x := origin.X
     y := origin.Y
 
-    greyImage := GetImage(x, y, width, height, exposure)
+    greyImage := GetImage(x, y, width, height, exposure, gain)
 
     bufWriter := bufio.NewWriter(imageWriter)
     encoder(bufWriter, greyImage)

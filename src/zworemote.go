@@ -65,13 +65,14 @@ func main() {
 
 }
 
-func handleImageRequest(writerFunc func(origin image.Point, width int, height int, exposure float64, imageWriter io.Writer), w http.ResponseWriter, r *http.Request) {
+func handleImageRequest(writerFunc func(origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer), w http.ResponseWriter, r *http.Request) {
     x, err := strconv.Atoi(r.FormValue("x"))
     y, err := strconv.Atoi(r.FormValue("y"))
     origin := image.Point{x, y}
     width, err := strconv.Atoi(r.FormValue("w"))
     height, err := strconv.Atoi(r.FormValue("h"))
     e, err := strconv.ParseFloat(r.FormValue("e"), 64)
+    g, err := strconv.ParseFloat(r.FormValue("g"), 64)
     log.Print(err)
-    writerFunc(origin, width, height, e, w)
+    writerFunc(origin, width, height, e, g, w)
 }

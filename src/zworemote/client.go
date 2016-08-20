@@ -153,7 +153,9 @@ package zworemote
             var params = getQueryParams();
             var e = params["e"];
             var eClause = e ? "&e=" + e : "";
-            camImg.src = "cam.jpg?" + eClause + "&" + new Date().getTime();
+            var g = params["g"];
+            var gClause = g ? "&g=" + g : "";
+            camImg.src = "cam.jpg?" + eClause + gClause + "&" + new Date().getTime();
         }
         function showMarker(name) {
             clearMarkers();
@@ -240,7 +242,9 @@ package zworemote
         function updateZoom(x, y) {
             var params = getQueryParams();
             var e = params["e"];
+            var g = params["g"];
             var eClause = e ? "&e=" + e : "";
+            var gClause = g ? "&g=" + g : "";
             var zoomElement = document.getElementById("zoom");
             var camElement = document.getElementById("cam");
             zoomElement.style.top = y - 120 + "px";
@@ -252,7 +256,7 @@ package zworemote
             if (coords.y >= 240) {
                 coords.y -= 240;
             }
-            zoomElement.src = src="cam.jpg?" + eClause + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y;
+            zoomElement.src = src="cam.jpg?" + eClause + gClause + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y;
             zoomTimer = setTimeout(function() { updateZoom(x, y); }, 100);
         }
         function guide() {
