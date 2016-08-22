@@ -104,6 +104,10 @@ package zworemote
               .tcinner {
                 margin-left:-50%%;
               }
+              .tcinner input {
+                background: red;
+                color: black;
+              }
               .rcontrols {
                 position:fixed;
                 top:50%%;
@@ -157,10 +161,9 @@ package zworemote
 
         function updateCam() {
             var camImg = document.getElementById("cam");
-            var params = getQueryParams();
-            var e = params["e"];
+            var e = currentParams["e"];
             var eClause = e ? "&e=" + e : "";
-            var g = params["g"];
+            var g = currentParams["g"];
             var gClause = g ? "&g=" + g : "";
             camImg.src = "cam.jpg?" + eClause + gClause + "&" + new Date().getTime();
         }
@@ -200,7 +203,11 @@ package zworemote
             }
             return { x: x, y: y };
         }
+        var currentParams = { };
         function getQueryParams() {
+            if (Object.keys(currentParams).length > 0) {
+                return currentParams;
+            }
             var qString = document.location.search.substring(1);
             var pairs = qString.split("&");
             var params = {};
@@ -208,6 +215,7 @@ package zworemote
                 var pair = pairs[i].split("=");
                 params[pair[0]] = pair[1];
             }
+            currentParams = params;
             return params;
         }
         var startX = 0;
@@ -233,6 +241,27 @@ package zworemote
             camElement.style.webkitFilter =
                 "brightness(" + camBrightness + ") contrast(" + camContrast + ")";
         }
+        var camExposure = 3.0;
+        var camGain = 1.4;
+        var startExposure = 200;
+        var startGain = 1;
+        function adjustExposureStart(event) {
+            startX = event.pageX;
+            startY = event.pageY;
+            startExposure = parseFloat(currentParams["e"]);
+            startGain = parseFloat(currentParams["g"]);
+        }
+        function adjustExposure(event) {
+            var deltaX = event.pageX - startX;
+            var deltaY = event.pageY - startY;
+            currentParams["e"] = startExposure + deltaX / 100.0;
+            currentParams["g"] = startGain + deltaY / 100.0;
+            var display = document.getElementById("bldisplay");
+            display.innerHTML = currentParams["e"] + " x " + currentParams["g"];
+        }
+        function adjustExposureEnd(event) {
+            updateCam();
+        }
         function imageClick(event) {
             clearTimeout(zoomTimer);
             var imgClick = getClickPosition(event);
@@ -247,9 +276,8 @@ package zworemote
         };
         var zoomTimer;
         function updateZoom(x, y) {
-            var params = getQueryParams();
-            var e = params["e"];
-            var g = params["g"];
+            var e = currentParams["e"];
+            var g = currentParams["g"];
             var eClause = e ? "&e=" + e : "";
             var gClause = g ? "&g=" + g : "";
             var zoomElement = document.getElementById("zoom");
@@ -445,10 +473,11 @@ package zworemote
             adjustSizes();
         }
         window.onload = function() {
+            getQueryParams();
             updateCam();
             httpGet("cam.json", function(text) {
-                var display = document.getElementById("bldisplay");
                 var stats = JSON.parse(text);
+                var display = document.getElementById("bldisplay");
                 display.innerHTML = parseFloat(stats["temperature"]) + " &deg;C";
             });
 
@@ -457,7 +486,7 @@ package zworemote
     </head>
     <body>
     <div class="imgBox" onclick="imageDispatch(event)">
-        <img id="cam" src="cam.jpg?e=5" onclick="imageClick(event)" onload="adjustSizes()"
+        <img id="cam"  onclick="imageClick(event)" onload="adjustSizes()"
             style="-webkit-filter:brightness(140%%)contrast(300%%);position: relative; top: 0; left: 0;height:100%%;">
         <img id="solvedfield" onload="adjustSizes()" onclick="solvedClick(event)"
             onerror="this.style.display='none';"
@@ -535,6 +564,19 @@ package zworemote
             <g >
                 <path d="M30,10 L30,50 A20,20 0 0,1 30,10 z" fill="black" />
                 <path d="M30,50 L30,10 A20,20 0 0,1 30,50 z" fill="firebrick" />
+            </g>
+          </svg>
+        </a>
+      </div>
+      <div class="trinner" >
+        <a draggable="true"
+            ontouchstart="adjustExposureStart(event)" ondragstart="adjustExposureStart(event)"
+            ondrag="adjustExposure(event)" ontouchmove="adjustExposure(event)"
+            ontouchend="adjustExposureEnd(event)" ondragend="adjustExposureEnd(event)">
+          <svg width="60px" height="60px">
+            <g >
+                <rect x="10" y="10" width="20" height="40" fill="black" />
+                <rect x="30" y="10" width="20" height="40" fill="firebrick" />
             </g>
           </svg>
         </a>
