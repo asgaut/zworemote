@@ -235,7 +235,12 @@ func encodePNG(imageWriter io.Writer, image image.Image) {
 }
 
 func encodeJPG(imageWriter io.Writer, image image.Image) {
-    jpeg.Encode(imageWriter, image, &jpeg.Options{Quality: 90})
+    quality := 30
+	bounds := image.Bounds()
+    if (bounds.Max.Y - bounds.Min.Y < 1000) {
+        quality = 90
+    }
+    jpeg.Encode(imageWriter, image, &jpeg.Options{Quality: quality})
 }
 
 func WriteStats(jsonWriter io.Writer)  {
