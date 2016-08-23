@@ -236,7 +236,7 @@ func encodePNG(imageWriter io.Writer, image image.Image) {
 
 func encodeJPG(imageWriter io.Writer, image image.Image) {
     quality := 30
-	bounds := image.Bounds()
+    bounds := image.Bounds()
     if (bounds.Max.Y - bounds.Min.Y < 1000) {
         quality = 90
     }
