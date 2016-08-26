@@ -551,14 +551,14 @@ package zworemote
         <a onclick="expose(10000)">10.0s</a>
       </div>
     </div>
-    <div class="bcontrols" >
+    <div class="bcontrols" style="display: none;">
       <div class="bcinner" >
         <a onclick="guide()">GUIDE</a>
         <a onclick="stop()">STOP</a>
         <a onclick="loop()">LOOP</a>
       </div>
     </div>
-    <div class="tcontrols" >
+    <div class="tcontrols" style="display:none;">
       <div class="tcinner" >
         <input onchange="findField(this.value);" >
       </div>
@@ -592,7 +592,7 @@ package zworemote
     </div>
     <div class="brcontrols" >
       <div class="brinner" >
-        <a onclick="toggleSolved()">
+        <a onclick="toggleSolved()" style="display:none;">
             <svg width="40px" height="40px">
             <g >
                 <animateTransform id="solvedspinner"
