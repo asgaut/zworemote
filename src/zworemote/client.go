@@ -254,10 +254,10 @@ package zworemote
         function adjustExposure(event) {
             var deltaX = event.pageX - startX;
             var deltaY = event.pageY - startY;
-            currentParams["e"] = startExposure + deltaX / 100.0;
-            currentParams["g"] = startGain + deltaY / 100.0;
+            currentParams["e"] = Math.max(0, (startExposure + 1.0)  * (1.0 + deltaY / 100.0));
+            currentParams["g"] = Math.max(0, (startGain + 1.0) * (1.0 + deltaX / 100.0));
             var display = document.getElementById("bldisplay");
-            display.innerHTML = currentParams["e"] + " x " + currentParams["g"];
+            display.innerHTML = currentParams["e"].toFixed(2) + " x " + currentParams["g"].toFixed(0);
         }
         function adjustExposureEnd(event) {
             updateCam();
@@ -309,7 +309,15 @@ package zworemote
         };
         function expose(t) {
             console.log("expose" + t);
-            ws.send(JSON.stringify({method:"set_exposure", params:[t], id:4}));
+//            ws.send(JSON.stringify({method:"set_exposure", params:[t], id:4}));
+
+            var e = t;
+            var eClause = e ? "&e=" + e : "";
+            var g = currentParams["g"];
+            var gClause = g ? "&g=" + g : "";
+            document.location = "?" + eClause + gClause;
+
+
         };
         function toggleBullseye() {
             var bullseyeElement = document.getElementById("bull");
@@ -538,9 +546,9 @@ package zworemote
     </div>
     <div class="rcontrols" >
       <div class="rcinner" >
-        <a onclick="expose(500)">0.5s</a>
+        <a onclick="expose(100)">0.1s</a>
         <a onclick="expose(1000)">1.0s</a>
-        <a onclick="expose(2000)">2.0s</a>
+        <a onclick="expose(10000)">10.0s</a>
       </div>
     </div>
     <div class="bcontrols" >
