@@ -165,7 +165,7 @@ package zworemote
             var eClause = e ? "&e=" + e : "";
             var g = currentParams["g"];
             var gClause = g ? "&g=" + g : "";
-            camImg.src = "cam.jpg?" + eClause + gClause + "&" + new Date().getTime();
+            camImg.src = "cam.jpg?" + eClause + gClause + "&r=" + rand();
         }
         function showMarker(name) {
             clearMarkers();
@@ -202,6 +202,9 @@ package zworemote
                 element = element.offsetParent;
             }
             return { x: x, y: y };
+        }
+        function rand() {
+            return Math.random().toString(16).substring(2);
         }
         var currentParams = { };
         function getQueryParams() {
@@ -282,8 +285,6 @@ package zworemote
             var gClause = g ? "&g=" + g : "";
             var zoomElement = document.getElementById("zoom");
             var camElement = document.getElementById("cam");
-            zoomElement.style.top = y - 120 + "px";
-            zoomElement.style.left = x - 160 + "px";
             var coords = getScaledCoordinates(camElement, {x: x, y: y});
             if (coords.x >= 320) {
                 coords.x -= 320;
@@ -291,8 +292,10 @@ package zworemote
             if (coords.y >= 240) {
                 coords.y -= 240;
             }
-            zoomElement.src = src="cam.jpg?" + eClause + gClause + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y;
-            zoomTimer = setTimeout(function() { updateZoom(x, y); }, 100);
+            zoomElement.src = src="cam.jpg?" + eClause + gClause + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y + "&r=" + rand();
+            zoomElement.style.top = y - 120 + "px";
+            zoomElement.style.left = x - 160 + "px";
+            zoomTimer = setTimeout(function() { updateZoom(x, y); }, parseFloat(e) + 200.0);
         }
         function guide() {
             console.log("guide");
