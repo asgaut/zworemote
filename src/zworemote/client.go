@@ -10,6 +10,9 @@ package zworemote
           body {
             background-color: #202020;
           }
+          input {
+            background: red;
+          }
           .imgBox {
             position: relative;+
             left: 0;
@@ -31,6 +34,8 @@ package zworemote
             position:fixed;
             top:10px;
             right:10px;
+            display: flex;
+            flex-direction: column;
           }
           .brcontrols a, .trcontrols a {
             display:block;
@@ -39,6 +44,12 @@ package zworemote
             font-size:20px;
             border-radius:8px;
             background:red;
+          }
+          .trinner {
+            align-self: center;
+          }
+          .trinner input {
+            max-width: 70px;
           }
           @media (max-width: 640px) {
               .bcontrols {
@@ -257,10 +268,25 @@ package zworemote
         function adjustExposure(event) {
             var deltaX = event.pageX - startX;
             var deltaY = event.pageY - startY;
-            currentParams["e"] = Math.max(0, (startExposure + 1.0)  * (1.0 + deltaY / 100.0));
-            currentParams["g"] = Math.max(0, (startGain + 1.0) * (1.0 + deltaX / 100.0));
+            var exposure = Math.max(0, (startExposure + 1.0)  * (1.0 + deltaY / 100.0));
+            var gain = Math.max(0, (startGain + 1.0) * (1.0 + deltaX / 100.0));
+            adjustExposureWithGainExposure(gain, exposure);
+        }
+        function adjustExposureWithFields() {
+            var gain = document.getElementById("gainField").value;
+            var exposure = document.getElementById("exposureField").value;
+            adjustExposureWithGainExposure(gain, exposure);
+        }
+        function adjustExposureWithGainExposure(gain, exposure) {
+            currentParams["e"] = exposure;
+            currentParams["g"] = gain;
             var display = document.getElementById("bldisplay");
             display.innerHTML = currentParams["e"].toFixed(2) + " x " + currentParams["g"].toFixed(0);
+            var gainField = document.getElementById("gainField");
+            var exposureField = document.getElementById("exposureField");
+            exposureField.value = currentParams["e"].toFixed(2);
+            gainField.value = currentParams["g"].toFixed(0);
+
         }
         function adjustExposureEnd(event) {
             updateCam();
@@ -591,6 +617,12 @@ package zworemote
             </g>
           </svg>
         </a>
+      </div>
+      <div class="trinner" >
+        <input id="gainField" onblur="adjustExposureWithFields()" onchange="adjustExposureWithFields()">
+      </div>
+      <div class="trinner">
+        <input id="exposureField" onblur="adjustExposureWithFields()" onchange="adjustExposureWithFields()">
       </div>
     </div>
     <div class="brcontrols" >
