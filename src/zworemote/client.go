@@ -178,6 +178,17 @@ package zworemote
             var gClause = g ? "&g=" + g : "";
             camImg.src = "cam.jpg?" + eClause + gClause + "&r=" + rand();
         }
+        function runSeries() {
+            clearTimeout(zoomTimer);
+            var e = currentParams["e"];
+            var eClause = e ? "&e=" + e : "";
+            var g = currentParams["g"];
+            var gClause = g ? "&g=" + g : "";
+            var n = currentParams["n"];
+            var nClause = n ? "&n=" + n : "&n=3";
+            var seriesURL = "series?" + eClause + gClause + nClause + "&r=" + rand();
+            httpGet(seriesURL, function(data) { console.log(data)});
+        }
         function showMarker(name) {
             clearMarkers();
             document.getElementById("m-" + name).style["opacity"] = 1.0;
@@ -230,6 +241,9 @@ package zworemote
                 params[pair[0]] = pair[1];
             }
             currentParams = params;
+            currentParams["e"] = parseFloat(currentParams["e"]);
+            currentParams["g"] = parseFloat(currentParams["g"]);
+            currentParams["n"] = parseInt(currentParams["n"]);
             return params;
         }
         var startX = 0;
@@ -255,7 +269,6 @@ package zworemote
             camElement.style.webkitFilter =
                 "brightness(" + camBrightness + ") contrast(" + camContrast + ")";
         }
-        var camExposure = 3.0;
         var camGain = 1.4;
         var startExposure = 200;
         var startGain = 1;
@@ -273,20 +286,23 @@ package zworemote
             adjustExposureWithGainExposure(gain, exposure);
         }
         function adjustExposureWithFields() {
-            var gain = document.getElementById("gainField").value;
-            var exposure = document.getElementById("exposureField").value;
+            var gain = parseFloat(document.getElementById("gainField").value);
+            var exposure = parseFloat(document.getElementById("exposureField").value);
             adjustExposureWithGainExposure(gain, exposure);
+            updateCam();
         }
         function adjustExposureWithGainExposure(gain, exposure) {
             currentParams["e"] = exposure;
             currentParams["g"] = gain;
             var display = document.getElementById("bldisplay");
             display.innerHTML = currentParams["e"].toFixed(2) + " x " + currentParams["g"].toFixed(0);
+            updateExposureGainFields();
+        }
+        function updateExposureGainFields() {
             var gainField = document.getElementById("gainField");
             var exposureField = document.getElementById("exposureField");
             exposureField.value = currentParams["e"].toFixed(2);
             gainField.value = currentParams["g"].toFixed(0);
-
         }
         function adjustExposureEnd(event) {
             updateCam();
@@ -517,7 +533,7 @@ package zworemote
                 var display = document.getElementById("bldisplay");
                 display.innerHTML = parseFloat(stats["temperature"]) + " &deg;C";
             });
-
+            updateExposureGainFields();
         }
         </script>
     </head>
@@ -578,6 +594,7 @@ package zworemote
         <a onclick="expose(100)">0.1s</a>
         <a onclick="expose(1000)">1.0s</a>
         <a onclick="expose(10000)">10.0s</a>
+        <a onclick="runSeries()">run</a>
       </div>
     </div>
     <div class="bcontrols" style="display: none;">

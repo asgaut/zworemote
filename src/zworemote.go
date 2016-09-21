@@ -15,7 +15,8 @@ import "os/signal"
 //import "os/exec"
 //import "path/filepath"
 //import "strings"
-//import "bufio"
+import "time"
+import "bufio"
 import "strconv"
 import "net/http"
 import "log"
@@ -54,6 +55,12 @@ func main() {
         handleImageRequest(zwoasi.WriteJPGImage, w, r)
     })
 
+    http.HandleFunc("/zworemote/series", func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "text/html")
+        handleSeries(r)
+        fmt.Fprintf(w, "series complete")
+    })
+
     http.HandleFunc("/zworemote/cam.json", func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "application/json")
         zwoasi.WriteStats(w)
@@ -65,7 +72,8 @@ func main() {
 
 }
 
-func handleImageRequest(writerFunc func(origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer), w http.ResponseWriter, r *http.Request) {
+func handleSeries(r *http.Request) {
+    n, err := strconv.Atoi(r.FormValue("n"))
     x, err := strconv.Atoi(r.FormValue("x"))
     y, err := strconv.Atoi(r.FormValue("y"))
     origin := image.Point{x, y}
@@ -73,6 +81,29 @@ func handleImageRequest(writerFunc func(origin image.Point, width int, height in
     height, err := strconv.Atoi(r.FormValue("h"))
     e, err := strconv.ParseFloat(r.FormValue("e"), 64)
     g, err := strconv.ParseFloat(r.FormValue("g"), 64)
+    log.Print(err)
+    for i := 0; i < n; i++ {
+        now := time.Now().UnixNano() / (int64(time.Millisecond)/int64(time.Nanosecond))
+        fileName := fmt.Sprintf("/tmp/camseries%x.png", now)
+        f, err := os.Create(fileName)
+        log.Print(err)
+        bufWriter := bufio.NewWriter(f)
+        zwoasi.WritePNGImage(origin, width, height, e, g, bufWriter)
+        bufWriter.Flush()
+    }
+}
+
+func handleImageRequest(writerFunc func(origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer) image.Image, w http.ResponseWriter, r *http.Request) {
+    x, err := strconv.Atoi(r.FormValue("x"))
+    y, err := strconv.Atoi(r.FormValue("y"))
+//save image or not
+//    s := r.FormValue("s")
+    origin := image.Point{x, y}
+    width, err := strconv.Atoi(r.FormValue("w"))
+    height, err := strconv.Atoi(r.FormValue("h"))
+    e, err := strconv.ParseFloat(r.FormValue("e"), 64)
+    g, err := strconv.ParseFloat(r.FormValue("g"), 64)
+log.Print("image size ", width, " ", height)
     log.Print(err)
     writerFunc(origin, width, height, e, g, w)
 }

@@ -5,7 +5,7 @@
 package zwoasi
 
 //import "bytes"
-//import "fmt"
+import "fmt"
 //import "os"
 import "io"
 import "bufio"
@@ -205,15 +205,15 @@ func GetImage(x int, y int, width int, height int, exposure float64, gain float6
     return img
 }
 
-func WritePNGImage(origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer)  {
-    writeEncodedImage(encodePNG, origin, width, height, exposure, gain, imageWriter)
+func WritePNGImage(origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer) image.Image {
+    return writeEncodedImage(encodePNG, origin, width, height, exposure, gain, imageWriter)
 }
 
-func WriteJPGImage(origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer)  {
-    writeEncodedImage(encodeJPG, origin, width, height, exposure, gain, imageWriter)
+func WriteJPGImage(origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer) image.Image {
+    return writeEncodedImage(encodeJPG, origin, width, height, exposure, gain, imageWriter)
 }
 
-func writeEncodedImage(encoder func (imageWriter io.Writer, image image.Image), origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer)  {
+func writeEncodedImage(encoder func (imageWriter io.Writer, image image.Image), origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer) image.Image {
     if (exposure == 0.0) {
         exposure = 300.0
     }
@@ -225,10 +225,40 @@ func writeEncodedImage(encoder func (imageWriter io.Writer, image image.Image), 
 
     greyImage := GetImage(x, y, width, height, exposure, gain)
 
+    fmt.Println("Contrast ", GetContrast(greyImage))
+
     bufWriter := bufio.NewWriter(imageWriter)
     encoder(bufWriter, greyImage)
     bufWriter.Flush()
+    return greyImage
 }
+
+func GetContrast(image image.Image) float64 {
+    total := 0.0
+    max := 0.0
+    min := 65535.0
+    bounds := image.Bounds()
+    pixelCount := (bounds.Max.Y - bounds.Min.Y) * (bounds.Max.X - bounds.Min.X)
+    for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+        for x := bounds.Min.X; x < bounds.Max.X; x++ {
+//            r, g, b, a := image.At(x, y).RGBA()
+            r, _, _, _ := image.At(x, y).RGBA()
+            v := float64(r)
+            if (v < min) {
+                min = v
+            }
+            if (v > max) {
+                max = v
+            }
+//image.Set(x, y, color.RGBA{r, 0, 0, a})
+
+            total += v
+        }
+    }
+fmt.Println("                                      min: ", min, " max: ", max)
+    return (max - min) / float64(pixelCount)
+}
+
 
 func encodePNG(imageWriter io.Writer, image image.Image) {
     png.Encode(imageWriter, image)
