@@ -79,6 +79,10 @@ func handleSeries(r *http.Request) {
     origin := image.Point{x, y}
     width, err := strconv.Atoi(r.FormValue("w"))
     height, err := strconv.Atoi(r.FormValue("h"))
+    depth, err := strconv.Atoi(r.FormValue("d"))
+    if (depth == 0) {
+        depth = 8
+    }
     e, err := strconv.ParseFloat(r.FormValue("e"), 64)
     g, err := strconv.ParseFloat(r.FormValue("g"), 64)
     log.Print(err)
@@ -88,12 +92,12 @@ func handleSeries(r *http.Request) {
         f, err := os.Create(fileName)
         log.Print(err)
         bufWriter := bufio.NewWriter(f)
-        zwoasi.WritePNGImage(origin, width, height, e, g, bufWriter)
+        zwoasi.WritePNGImage(origin, width, height, depth, e, g, bufWriter)
         bufWriter.Flush()
     }
 }
 
-func handleImageRequest(writerFunc func(origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer) image.Image, w http.ResponseWriter, r *http.Request) {
+func handleImageRequest(writerFunc func(origin image.Point, width int, height int, depth int, exposure float64, gain float64, imageWriter io.Writer) image.Image, w http.ResponseWriter, r *http.Request) {
     x, err := strconv.Atoi(r.FormValue("x"))
     y, err := strconv.Atoi(r.FormValue("y"))
 //save image or not
@@ -103,7 +107,8 @@ func handleImageRequest(writerFunc func(origin image.Point, width int, height in
     height, err := strconv.Atoi(r.FormValue("h"))
     e, err := strconv.ParseFloat(r.FormValue("e"), 64)
     g, err := strconv.ParseFloat(r.FormValue("g"), 64)
+    depth := 8
 log.Print("image size ", width, " ", height)
     log.Print(err)
-    writerFunc(origin, width, height, e, g, w)
+    writerFunc(origin, width, height, depth, e, g, w)
 }

@@ -85,7 +85,7 @@ long asiGetTemperature()  {
     return ltemp / 10;
 }
 
-unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, double exposure, double gain, int* widthFound, int* heightFound, int* len)  {
+unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, int depth, double exposure, double gain, int* widthFound, int* heightFound, int* len)  {
 
     bool bresult;
 
@@ -99,23 +99,26 @@ unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, 
         printf("setting max wxh %dx%d\n", width, height);
     }
 
-    ASISetROIFormat(CamNum, width, height,  1, ASI_IMG_RAW8);
+    int depthFactor = (depth == 8) ? 1 : 2;
+    ASI_IMG_TYPE imageType = (depth == 8) ? ASI_IMG_RAW8 : ASI_IMG_RAW16;
+
+    ASISetROIFormat(CamNum, width, height,  1, imageType);
     ASISetStartPos(CamNum, x, y);
     printf("setting origin %dx%d wxh %dx%d\n", x, y, width, height);
 
     int imageWidth;
     int imageHeight;
     int bin = 1;
-    int imageType;
 
     ASIGetROIFormat(CamNum, &imageWidth, &imageHeight, &bin, (ASI_IMG_TYPE*)&imageType);
     printf("ASIGetROIFormat %dx%d %d\n", imageWidth, imageHeight, imageType);
 
     *widthFound = imageWidth;
     *heightFound = imageHeight;
-    *len = imageWidth * imageHeight;
 
-    int imageSize = ASICameraInfo.MaxWidth * ASICameraInfo.MaxHeight; //Assume RAW8
+    int imageSize = ASICameraInfo.MaxWidth * ASICameraInfo.MaxHeight * depthFactor;
+    *len = imageSize;
+
     printf("Image size %d\n", imageSize);
 //    unsigned char imageData[imageSize];
     unsigned char* imageData;
@@ -183,13 +186,13 @@ func GetStats() map[string]string {
 }
 
 
-func GetImage(x int, y int, width int, height int, exposure float64, gain float64) image.Image  {
+func GetImage(x int, y int, width int, height int, depth int, exposure float64, gain float64) image.Image  {
     var widthC C.int
     var heightC C.int
     var lenC C.int
 
     mutex.Lock()
-    greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), C.int(width), C.int(height), C.double(exposure), C.double(gain), &widthC, &heightC, &lenC)
+    greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), C.int(width), C.int(height), C.int(depth), C.double(exposure), C.double(gain), &widthC, &heightC, &lenC)
     mutex.Unlock()
     greyBytes := C.GoBytes(unsafe.Pointer(greyCBytes), lenC)
 
@@ -197,23 +200,31 @@ func GetImage(x int, y int, width int, height int, exposure float64, gain float6
     heightFound := int(heightC)
 //    len := int(lenC)
 
-    img := image.NewGray(image.Rect(0, 0, widthFound, heightFound))
-    img.Pix = greyBytes
+    var resultImage image.Image
+    if (depth == 8) {
+        img := image.NewGray(image.Rect(0, 0, widthFound, heightFound))
+        img.Pix = greyBytes
+        resultImage = img
+    } else {
+        img := image.NewGray16(image.Rect(0, 0, widthFound, heightFound))
+        img.Pix = greyBytes
+        resultImage = img
+    }
 
     C.free(unsafe.Pointer(greyCBytes))
     
-    return img
+    return resultImage
 }
 
-func WritePNGImage(origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer) image.Image {
-    return writeEncodedImage(encodePNG, origin, width, height, exposure, gain, imageWriter)
+func WritePNGImage(origin image.Point, width int, height int, depth int, exposure float64, gain float64, imageWriter io.Writer) image.Image {
+    return writeEncodedImage(encodePNG, origin, width, height, depth, exposure, gain, imageWriter)
 }
 
-func WriteJPGImage(origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer) image.Image {
-    return writeEncodedImage(encodeJPG, origin, width, height, exposure, gain, imageWriter)
+func WriteJPGImage(origin image.Point, width int, height int, depth int, exposure float64, gain float64, imageWriter io.Writer) image.Image {
+    return writeEncodedImage(encodeJPG, origin, width, height, depth, exposure, gain, imageWriter)
 }
 
-func writeEncodedImage(encoder func (imageWriter io.Writer, image image.Image), origin image.Point, width int, height int, exposure float64, gain float64, imageWriter io.Writer) image.Image {
+func writeEncodedImage(encoder func (imageWriter io.Writer, image image.Image), origin image.Point, width int, height int, depth int, exposure float64, gain float64, imageWriter io.Writer) image.Image {
     if (exposure == 0.0) {
         exposure = 300.0
     }
@@ -223,7 +234,7 @@ func writeEncodedImage(encoder func (imageWriter io.Writer, image image.Image), 
     x := origin.X
     y := origin.Y
 
-    greyImage := GetImage(x, y, width, height, exposure, gain)
+    greyImage := GetImage(x, y, width, height, depth, exposure, gain)
 
     fmt.Println("Contrast ", GetContrast(greyImage))
 

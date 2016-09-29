@@ -28,24 +28,29 @@ ws.onmessage = function(msg) {console.log(msg.data);
 
 function updateCam() {
     var camImg = document.getElementById("cam");
-    var e = currentParams["e"];
-    var eClause = e ? "&e=" + e : "";
-    var g = currentParams["g"];
-    var gClause = g ? "&g=" + g : "";
-    camImg.src = "cam.jpg?" + eClause + gClause + "&r=" + rand();
+    camImg.src = "cam.jpg?" + serializeCurrentParams();
+    updateURL();
 }
 function updateSeriesCount(field) {
     currentParams["n"] = parseInt(field.value);
+    updateURL();
 }
-function runSeries() {
-    clearTimeout(zoomTimer);
+function serializeCurrentParams() {
     var e = currentParams["e"];
     var eClause = e ? "&e=" + e : "";
     var g = currentParams["g"];
     var gClause = g ? "&g=" + g : "";
     var n = currentParams["n"];
     var nClause = n ? "&n=" + n : "&n=3";
-    var seriesURL = "series?" + eClause + gClause + nClause + "&r=" + rand();
+    var query = eClause + gClause + nClause + "&r=" + rand();
+    return query;
+}
+function updateURL() {
+    window.history.pushState(currentParams, 'ZWO Remote', '?' + serializeCurrentParams());
+}
+function runSeries() {
+    clearTimeout(zoomTimer);
+    var seriesURL = "series?" + serializeCurrentParams();
     httpGet(seriesURL, function(data) { console.log(data)});
 }
 function showMarker(name) {
@@ -155,13 +160,15 @@ function adjustExposureWithGainExposure(gain, exposure) {
     currentParams["g"] = gain;
     var display = document.getElementById("bldisplay");
     display.innerHTML = currentParams["e"].toFixed(2) + " x " + currentParams["g"].toFixed(0);
-    updateExposureGainFields();
+    updateInputFields();
 }
-function updateExposureGainFields() {
+function updateInputFields() {
     var gainField = document.getElementById("gainField");
     var exposureField = document.getElementById("exposureField");
+    var countField = document.getElementById("countField");
     exposureField.value = currentParams["e"].toFixed(2);
     gainField.value = currentParams["g"].toFixed(0);
+    countField.value = currentParams["n"];
 }
 function adjustExposureEnd(event) {
     updateCam();
@@ -182,8 +189,6 @@ var zoomTimer;
 function updateZoom(x, y) {
     var e = currentParams["e"];
     var g = currentParams["g"];
-    var eClause = e ? "&e=" + e : "";
-    var gClause = g ? "&g=" + g : "";
     var zoomElement = document.getElementById("zoom");
     var camElement = document.getElementById("cam");
     var coords = getScaledCoordinates(camElement, {x: x, y: y});
@@ -193,7 +198,7 @@ function updateZoom(x, y) {
     if (coords.y >= 240) {
         coords.y -= 240;
     }
-    zoomElement.src = src="cam.jpg?" + eClause + gClause + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y + "&r=" + rand();
+    zoomElement.src = src="cam.jpg?" + serializeCurrentParams() + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y + "&r=" + rand();
     zoomElement.style.top = y - 120 + "px";
     zoomElement.style.left = x - 160 + "px";
     zoomTimer = setTimeout(function() { updateZoom(x, y); }, parseFloat(e) + 200.0);
@@ -216,10 +221,7 @@ function expose(t) {
 //            ws.send(JSON.stringify({method:"set_exposure", params:[t], id:4}));
 
     var e = t;
-    var eClause = e ? "&e=" + e : "";
-    var g = currentParams["g"];
-    var gClause = g ? "&g=" + g : "";
-    document.location = "?" + eClause + gClause;
+    document.location = "?" + serializeCurrentParams();
 
 
 };
@@ -392,7 +394,7 @@ window.onload = function() {
         var display = document.getElementById("bldisplay");
         display.innerHTML = parseFloat(stats["temperature"]) + " &deg;C";
     });
-    updateExposureGainFields();
+    updateInputFields();
 }
 
 
