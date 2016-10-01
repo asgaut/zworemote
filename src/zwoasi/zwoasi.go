@@ -12,6 +12,7 @@ import "bufio"
 //import "math"
 import "strconv"
 import "sync"
+import "time"
 import "image"
 //import "image/color"
 import "image/png"
@@ -120,7 +121,6 @@ unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, 
     *len = imageSize;
 
     printf("Image size %d\n", imageSize);
-//    unsigned char imageData[imageSize];
     unsigned char* imageData;
     imageData = (unsigned char*) malloc(imageSize);
 
@@ -191,14 +191,17 @@ func GetImage(x int, y int, width int, height int, depth int, exposure float64, 
     var heightC C.int
     var lenC C.int
 
+    start := time.Now()
     mutex.Lock()
     greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), C.int(width), C.int(height), C.int(depth), C.double(exposure), C.double(gain), &widthC, &heightC, &lenC)
     mutex.Unlock()
+    elapsed := time.Since(start)
+    fmt.Printf("Exposure took %s", elapsed)
+
     greyBytes := C.GoBytes(unsafe.Pointer(greyCBytes), lenC)
 
     widthFound := int(widthC)
     heightFound := int(heightC)
-//    len := int(lenC)
 
     var resultImage image.Image
     if (depth == 8) {
@@ -206,6 +209,7 @@ func GetImage(x int, y int, width int, height int, depth int, exposure float64, 
         img.Pix = greyBytes
         resultImage = img
     } else {
+        swab(greyBytes)
         img := image.NewGray16(image.Rect(0, 0, widthFound, heightFound))
         img.Pix = greyBytes
         resultImage = img
@@ -214,6 +218,14 @@ func GetImage(x int, y int, width int, height int, depth int, exposure float64, 
     C.free(unsafe.Pointer(greyCBytes))
     
     return resultImage
+}
+
+func swab(bytes []byte) {
+    for i := 0; i < len(bytes); i = i + 2 {
+        tempByte := bytes[i];
+        bytes[i] = bytes[i + 1]
+        bytes[i + 1] = tempByte
+    }
 }
 
 func WritePNGImage(origin image.Point, width int, height int, depth int, exposure float64, gain float64, imageWriter io.Writer) image.Image {
