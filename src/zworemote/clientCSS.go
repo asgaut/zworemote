@@ -53,6 +53,9 @@ package zworemote
     align-self: center;
     max-width: 50px;
   }
+  .rcinner svg {
+    padding: 2px
+  }
   @media (max-width: 640px) {
       .bcontrols {
         position:fixed;

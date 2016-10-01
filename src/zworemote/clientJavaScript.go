@@ -50,7 +50,7 @@ function updateURL() {
 }
 function runSeries() {
     clearTimeout(zoomTimer);
-    var seriesURL = "series?" + serializeCurrentParams();
+    var seriesURL = "series?" + serializeCurrentParams() + "&d=16";
     httpGet(seriesURL, function(data) { console.log(data)});
 }
 function showMarker(name) {

@@ -70,7 +70,15 @@ package zworemote
         <a onclick="expose(100)">0.1s</a>
         <a onclick="expose(1000)">1.0s</a>
         <a onclick="expose(10000)">10.0s</a>
-        <a onclick="runSeries()">run</a>
+        <a onclick="runSeries()">
+          <svg width="40px" height="30px">
+            <g stroke-width="1.5" stroke="black" fill="none">
+                <rect x="3" y="0" width="20" height="20" />
+                <rect x="10" y="5" width="20" height="20" />
+                <rect x="17" y="10" width="20" height="20" />
+            </g>
+          </svg>
+        </a>
         <input id="countField" onblur="updateSeriesCount(this)" onchange="updateSeriesCount(this)">
       </div>
     </div>
