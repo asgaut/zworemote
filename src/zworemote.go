@@ -87,28 +87,33 @@ func handleSeries(r *http.Request) {
     g, err := strconv.ParseFloat(r.FormValue("g"), 64)
     log.Print(err)
     for i := 0; i < n; i++ {
-        now := time.Now().UnixNano() / (int64(time.Millisecond)/int64(time.Nanosecond))
-        fileName := fmt.Sprintf("/tmp/camseries%x.png", now)
-        f, err := os.Create(fileName)
-        log.Print(err)
+        f := getStampedFile()
+        defer f.Close()
         bufWriter := bufio.NewWriter(f)
         zwoasi.WritePNGImage(origin, width, height, depth, e, g, bufWriter)
         bufWriter.Flush()
     }
 }
 
+func getStampedFile() *os.File {
+    now := time.Now()
+    fileName := fmt.Sprintf("/tmp/camseries%d%02d%02d-%02d%02d%02d-%x.png",
+            now.Year(), now.Month(), now.Day(),
+            now.Hour(), now.Minute(), now.Second(), now.Nanosecond() / 1000)
+    f, err := os.Create(fileName)
+    log.Print(err)
+    return f
+}
+
 func handleImageRequest(writerFunc func(origin image.Point, width int, height int, depth int, exposure float64, gain float64, imageWriter io.Writer) image.Image, w http.ResponseWriter, r *http.Request) {
     x, err := strconv.Atoi(r.FormValue("x"))
     y, err := strconv.Atoi(r.FormValue("y"))
-//save image or not
-//    s := r.FormValue("s")
     origin := image.Point{x, y}
     width, err := strconv.Atoi(r.FormValue("w"))
     height, err := strconv.Atoi(r.FormValue("h"))
     e, err := strconv.ParseFloat(r.FormValue("e"), 64)
     g, err := strconv.ParseFloat(r.FormValue("g"), 64)
     depth := 8
-log.Print("image size ", width, " ", height)
     log.Print(err)
     writerFunc(origin, width, height, depth, e, g, w)
 }
