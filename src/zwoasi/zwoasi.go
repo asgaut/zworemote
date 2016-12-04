@@ -177,6 +177,20 @@ func GetTemperature() float64 {
     return value
 }
 
+func GetFriendlyTime(time float64) string {
+    seconds := time / 1000.0
+    if seconds < 60.0 {
+        return fmt.Sprintf("%.1fs", seconds)
+    }
+    minutes := int(seconds / 60.0)
+    extraSeconds := seconds - float64(minutes) * 60.0
+    extraSecondsClause := ""
+    if extraSeconds > 5.0 {
+        extraSecondsClause = fmt.Sprintf("%.0fs", extraSeconds)
+    }
+    return fmt.Sprintf("%dmin %s", minutes, extraSecondsClause)
+}
+
 func GetStats() map[string]string {
     stats := map[string]string{}
 
@@ -196,7 +210,7 @@ func GetImage(x int, y int, width int, height int, depth int, exposure float64, 
     greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), C.int(width), C.int(height), C.int(depth), C.double(exposure), C.double(gain), &widthC, &heightC, &lenC)
     mutex.Unlock()
     elapsed := time.Since(start)
-    fmt.Printf("Exposure took %s", elapsed)
+    fmt.Printf("Exposure took %s\n", elapsed)
 
     greyBytes := C.GoBytes(unsafe.Pointer(greyCBytes), lenC)
 

@@ -57,14 +57,13 @@ func main() {
 
     http.HandleFunc("/zworemote/series", func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "text/html")
-        handleSeries(r)
+        handleSeries(w, r)
         fmt.Fprintf(w, "series complete")
     })
 
     http.HandleFunc("/zworemote/cam.json", func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "application/json")
         zwoasi.WriteStats(w)
-
     })
 
     log.Print("http.ListenAndServe")
@@ -72,27 +71,41 @@ func main() {
 
 }
 
-func handleSeries(r *http.Request) {
-    n, err := strconv.Atoi(r.FormValue("n"))
-    x, err := strconv.Atoi(r.FormValue("x"))
-    y, err := strconv.Atoi(r.FormValue("y"))
+func handleSeries(w http.ResponseWriter, r *http.Request) {
+    n := formInt(r, "n")
+    x := formInt(r, "x")
+    y := formInt(r, "y")
     origin := image.Point{x, y}
-    width, err := strconv.Atoi(r.FormValue("w"))
-    height, err := strconv.Atoi(r.FormValue("h"))
-    depth, err := strconv.Atoi(r.FormValue("d"))
+    width := formInt(r, "w")
+    height := formInt(r, "h")
+    depth := formInt(r, "d")
     if (depth == 0) {
         depth = 8
     }
-    e, err := strconv.ParseFloat(r.FormValue("e"), 64)
-    g, err := strconv.ParseFloat(r.FormValue("g"), 64)
-    log.Print(err)
-    for i := 0; i < n; i++ {
+    e := formFloat(r, "e")
+    g := formFloat(r, "g")
+    fw, fok := w.(http.Flusher)
+
+    i := 0
+    camTemperature := 0.0
+    friendlyExposure := zwoasi.GetFriendlyTime(e)
+    for i = 0; i < n; i++ {
         f := getStampedFile()
         defer f.Close()
         bufWriter := bufio.NewWriter(f)
         zwoasi.WritePNGImage(origin, width, height, depth, e, g, bufWriter)
         bufWriter.Flush()
+        camTemperature = zwoasi.GetTemperature()
+        _, err := fmt.Fprintf(w, "Image %d/%d Exposure %s Gain %.0f Temperature %.0f\u00b0\n", i, n, friendlyExposure, g, camTemperature)
+        if fok {
+            fw.Flush()
+        }
+        if nil != err {
+            break
+        }
     }
+    log.Printf("Took %d/%d images Exposure %s Gain %.0f Temperature %.0f\u00b0\n", i, n, friendlyExposure, g, camTemperature)
+
 }
 
 func getStampedFile() *os.File {
@@ -106,14 +119,31 @@ func getStampedFile() *os.File {
 }
 
 func handleImageRequest(writerFunc func(origin image.Point, width int, height int, depth int, exposure float64, gain float64, imageWriter io.Writer) image.Image, w http.ResponseWriter, r *http.Request) {
-    x, err := strconv.Atoi(r.FormValue("x"))
-    y, err := strconv.Atoi(r.FormValue("y"))
+    x := formInt(r, "x")
+    y := formInt(r, "y")
     origin := image.Point{x, y}
-    width, err := strconv.Atoi(r.FormValue("w"))
-    height, err := strconv.Atoi(r.FormValue("h"))
-    e, err := strconv.ParseFloat(r.FormValue("e"), 64)
-    g, err := strconv.ParseFloat(r.FormValue("g"), 64)
+    width := formInt(r, "w")
+    height := formInt(r, "h")
+    e := formFloat(r, "e")
+    g := formFloat(r, "g")
     depth := 8
-    log.Print(err)
     writerFunc(origin, width, height, depth, e, g, w)
+}
+
+func formInt(r *http.Request, name string) int {
+    value, err := strconv.Atoi(r.FormValue(name))
+    if nil != err {
+        log.Printf("Failed to decode %s %s %s.", name, r.FormValue(name), err.Error())
+        return 0
+    }
+    return value
+}
+
+func formFloat(r *http.Request, name string) float64 {
+    value, err := strconv.ParseFloat(r.FormValue(name), 64)
+    if nil != err {
+        log.Printf("Failed to decode %s %s %s.", name, r.FormValue(name), err.Error())
+        return 0.0
+    }
+    return value
 }
