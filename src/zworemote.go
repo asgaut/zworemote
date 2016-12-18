@@ -15,6 +15,7 @@ import "os/signal"
 //import "os/exec"
 //import "path/filepath"
 //import "strings"
+import "regexp"
 import "time"
 import "bufio"
 import "strconv"
@@ -23,6 +24,8 @@ import "log"
 import "zwoasi"
 import "zworemote"
 //import "encoding/json"
+
+var validPrefix = regexp.MustCompile(`^[[:alnum:]]+$`)
 
 func main() {
     fmt.Println("Starting server")
@@ -84,13 +87,17 @@ func handleSeries(w http.ResponseWriter, r *http.Request) {
     }
     e := formFloat(r, "e")
     g := formFloat(r, "g")
+    prefix := r.FormValue("p")
+    if (!validPrefix.MatchString(prefix)) {
+        prefix = "cam"
+    }
     fw, fok := w.(http.Flusher)
 
     i := 0
     camTemperature := 0.0
     friendlyExposure := zwoasi.GetFriendlyTime(e)
     for i = 0; i < n; i++ {
-        f := getStampedFile()
+        f := getStampedFile(prefix)
         defer f.Close()
         bufWriter := bufio.NewWriter(f)
         zwoasi.WritePNGImage(origin, width, height, depth, e, g, bufWriter)
@@ -108,9 +115,10 @@ func handleSeries(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func getStampedFile() *os.File {
+func getStampedFile(prefix string) *os.File {
     now := time.Now()
-    fileName := fmt.Sprintf("/tmp/camseries%d%02d%02d-%02d%02d%02d-%x.png",
+    fileName := fmt.Sprintf("/tmp/%s%d%02d%02d-%02d:%02d:%02d-%x.png",
+            prefix,
             now.Year(), now.Month(), now.Day(),
             now.Hour(), now.Minute(), now.Second(), now.Nanosecond() / 1000)
     f, err := os.Create(fileName)
