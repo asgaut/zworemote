@@ -121,17 +121,16 @@ package zworemote
         </a>
       </div>
       <div class="trinner" >
-        <input id="gainField" onblur="adjustExposureWithFields()" onchange="adjustExposureWithFields()">
+        <input id="gainField" onblur="adjustExposureWithFields()" onchange="adjustExposureWithFields()" autocomplete="off">
       </div>
       <div class="trinner">
-        <input id="exposureField" onblur="adjustExposureWithFields()" onchange="adjustExposureWithFields()">
+        <input id="exposureField" onblur="adjustExposureWithFields()" onchange="adjustExposureWithFields()" autocomplete="off">
       </div>
     </div>
     <div class="brcontrols" >
       <div class="brinner" >
         <a onclick="toggleSolved()" style="display:none;">
-            <svg width="40px" height="40px">
-            <g >
+            <svg width="40px" height="40px"><g >
                 <animateTransform id="solvedspinner"
                     attributeName="transform"
                     attributeType="XML"
@@ -147,19 +146,21 @@ package zworemote
                 <circle cx="60%%" cy="30%%" r="8%%" stroke="black" stroke-width="1" fill="firebrick" />
                 <circle cx="20%%" cy="60%%" r="8%%" stroke="black" stroke-width="1" fill="firebrick" />
                 <circle cx="80%%" cy="80%%" r="8%%" stroke="black" stroke-width="1" fill="firebrick" />
-            </g>
-
-            </svg>
+            </g></svg>
         </a>
         <a onclick="toggleBullseye()">
-            <svg width="40px" height="40px">
-            <g >
+            <svg width="40px" height="40px"><g >
                 <line x1="0px" y1="50%%" x2="100%%" y2="50%%" stroke="black" stroke-width="1" />
                 <line x1="50%%" y1="0px" x2="50%%" y2="100%%" stroke="black" stroke-width="1" />
                 <circle cx="50%%" cy="50%%" r="20%%" stroke="black" stroke-width="1" fill="none" />
                 <circle cx="50%%" cy="50%%" r="10%%" stroke="black" stroke-width="1" fill="none" />
-            </g>
-            </svg>
+            </g></svg>
+        </a>
+        <a onclick="toggleGraphs()">
+            <svg width="40px" height="40px"><g>
+                <path d="M 10, 30 C 20, 30, 15, 10, 20, 10" stroke="black" stroke-width="2" fill="none" stroke-dasharray="1, 1"/>
+                <path d="M 20, 10 C 25, 10, 20, 30, 30, 30" stroke="black" stroke-width="2" fill="none" stroke-dasharray="1, 1"/>
+            </g></svg>
         </a>
       </div>
     </div>

@@ -50,11 +50,13 @@ func main() {
 
     http.HandleFunc("/zworemote/cam.png", func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "image/png")
+        w.Header().Set("Cache-Control", "no-store")
         handleImageRequest(zwoasi.WritePNGImage, w, r)
     })
 
     http.HandleFunc("/zworemote/cam.jpg", func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "image/jpeg")
+        w.Header().Set("Cache-Control", "no-store")
         handleImageRequest(zwoasi.WriteJPGImage, w, r)
     })
 
@@ -67,6 +69,12 @@ func main() {
     http.HandleFunc("/zworemote/cam.json", func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "application/json")
         zwoasi.WriteStats(w)
+    })
+
+    http.HandleFunc("/zworemote/filter", func(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, "filter position")
+        f := formInt(r, "f")
+        zwoasi.SetFilterPosition(f)
     })
 
     log.Print("http.ListenAndServe")
@@ -91,6 +99,14 @@ func handleSeries(w http.ResponseWriter, r *http.Request) {
     if (!validPrefix.MatchString(prefix)) {
         prefix = "cam"
     }
+    f := formInt(r, "f")
+    if (f != 0) {
+        zwoasi.SetFilterPosition(f)
+    }
+
+    config := zwoasi.CaptureConfig{}
+    config.Graphs = r.FormValue("graphs")
+
     fw, fok := w.(http.Flusher)
 
     i := 0
@@ -100,7 +116,7 @@ func handleSeries(w http.ResponseWriter, r *http.Request) {
         f := getStampedFile(prefix)
         defer f.Close()
         bufWriter := bufio.NewWriter(f)
-        zwoasi.WritePNGImage(origin, width, height, depth, e, g, bufWriter)
+        zwoasi.WritePNGImage(origin, width, height, depth, e, g, config ,bufWriter)
         bufWriter.Flush()
         camTemperature = zwoasi.GetTemperature()
         _, err := fmt.Fprintf(w, "Image %d/%d Exposure %s Gain %.0f Temperature %.0f\u00b0\n", i, n, friendlyExposure, g, camTemperature)
@@ -117,7 +133,7 @@ func handleSeries(w http.ResponseWriter, r *http.Request) {
 
 func getStampedFile(prefix string) *os.File {
     now := time.Now()
-    fileName := fmt.Sprintf("/tmp/%s%d%02d%02d-%02d:%02d:%02d-%x.png",
+    fileName := fmt.Sprintf("/tmp/%s%d%02d%02d-%02d.%02d.%02d-%x.png",
             prefix,
             now.Year(), now.Month(), now.Day(),
             now.Hour(), now.Minute(), now.Second(), now.Nanosecond() / 1000)
@@ -126,7 +142,7 @@ func getStampedFile(prefix string) *os.File {
     return f
 }
 
-func handleImageRequest(writerFunc func(origin image.Point, width int, height int, depth int, exposure float64, gain float64, imageWriter io.Writer) image.Image, w http.ResponseWriter, r *http.Request) {
+func handleImageRequest(writerFunc func(origin image.Point, width int, height int, depth int, exposure float64, gain float64, config zwoasi.CaptureConfig, imageWriter io.Writer) image.Image, w http.ResponseWriter, r *http.Request) {
     x := formInt(r, "x")
     y := formInt(r, "y")
     origin := image.Point{x, y}
@@ -135,7 +151,10 @@ func handleImageRequest(writerFunc func(origin image.Point, width int, height in
     e := formFloat(r, "e")
     g := formFloat(r, "g")
     depth := 8
-    writerFunc(origin, width, height, depth, e, g, w)
+    config := zwoasi.CaptureConfig{}
+    config.Graphs = r.FormValue("graphs")
+
+    writerFunc(origin, width, height, depth, e, g, config, w)
 }
 
 func formInt(r *http.Request, name string) int {

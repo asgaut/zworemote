@@ -189,6 +189,8 @@ var zoomTimer;
 function updateZoom(x, y) {
     var e = currentParams["e"];
     var g = currentParams["g"];
+    var graphs = currentParams["graphs"];
+    var graphsClause = graphs ? "&graphs=" + graphs : "";
     var zoomElement = document.getElementById("zoom");
     var camElement = document.getElementById("cam");
     var coords = getScaledCoordinates(camElement, {x: x, y: y});
@@ -198,7 +200,7 @@ function updateZoom(x, y) {
     if (coords.y >= 240) {
         coords.y -= 240;
     }
-    zoomElement.src = src="cam.jpg?" + serializeCurrentParams() + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y + "&r=" + rand();
+    zoomElement.src = src="cam.jpg?" + serializeCurrentParams() + graphsClause + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y + "&r=" + rand();
     zoomElement.style.top = y - 120 + "px";
     zoomElement.style.left = x - 160 + "px";
     zoomTimer = setTimeout(function() { updateZoom(x, y); }, parseFloat(e) + 200.0);
@@ -243,6 +245,13 @@ function toggleSolved() {
        }
     } else {
         solvedElement.style["opacity"] = newOpacity;
+    }
+}
+function toggleGraphs() {
+    if (currentParams["graphs"] == "all") {
+        delete currentParams["graphs"];
+    } else {
+        currentParams["graphs"] = "all";
     }
 }
 function processInfo(data) {
