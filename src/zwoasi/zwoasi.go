@@ -9,7 +9,7 @@ import "fmt"
 //import "os"
 import "io"
 import "bufio"
-//import "math"
+import "math"
 import "strconv"
 import "sync"
 import "time"
@@ -441,9 +441,9 @@ func MarkStars(img image.Image) image.Image {
         cX := int(centerX / pixelTotal)
         cY := int(centerY / pixelTotal)
 
-        currentMax := bounds.Max.Y
+        currentMax := 0
         currentMaxX := 0
-        halfMaxDelta := bounds.Max.Y
+        halfMaxDelta := math.MaxInt64
         halfMax := 0
         halfMaxX := 0
         halfMaxQuest := true
@@ -461,18 +461,19 @@ func MarkStars(img image.Image) image.Image {
                 scale = 2 * swath * imageMax / (bounds.Max.Y - bounds.Min.Y)
             }
             gY := bounds.Max.Y - int(accumY / scale)
-            if (gY < currentMax) {
-                //max is reversed in graph
-                currentMax = gY
-                halfMax = gY / 2
+            if (accumY > currentMax) {
+                currentMax = accumY
+                halfMax = currentMax / 2
                 currentMaxX = x
+                halfMaxX = x - currentMaxX
+                halfMaxDelta = math.MaxInt64
                 halfMaxQuest = true
-
             }
             if (halfMaxQuest) {
-                if (halfMax - gY < halfMaxDelta) {
-                    halfMaxDelta = halfMax - gY
-                    halfMaxX = x
+                delta := abs(halfMax - accumY)
+                if (delta < halfMaxDelta) {
+                    halfMaxDelta = delta
+                    halfMaxX = x - currentMaxX
                 } else {
 //                    halfMaxQuest = false
                 }
@@ -485,13 +486,20 @@ func MarkStars(img image.Image) image.Image {
         }
 
         draw.Draw(outImage, image.Rect(cX - 5, cY - 5, cX + 5, cY + 5), &image.Uniform{red}, image.ZP, draw.Src)
-        draw.Draw(outImage, image.Rect(currentMaxX, cY - 5, halfMaxX, cY + 5), &image.Uniform{blue}, image.ZP, draw.Src)
+        draw.Draw(outImage, image.Rect(currentMaxX - halfMaxX, cY - swath, currentMaxX - halfMaxX + 1, cY + swath), &image.Uniform{blue}, image.ZP, draw.Src)
+        draw.Draw(outImage, image.Rect(currentMaxX + halfMaxX, cY - swath, currentMaxX + halfMaxX + 1, cY + swath), &image.Uniform{blue}, image.ZP, draw.Src)
     }
 
     return outImage
 
 }
 
+func abs(x int) int {
+    if x < 0 {
+        return -x
+    }
+    return x
+}
 
 func encodePNG(imageWriter io.Writer, image image.Image) {
     png.Encode(imageWriter, image)
