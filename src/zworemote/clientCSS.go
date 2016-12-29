@@ -56,6 +56,10 @@ package zworemote
   .rcinner svg {
     padding: 2px
   }
+  .zoomstats {
+    color: red;
+    font-size:20px;
+  }
   @media (max-width: 640px) {
       .bcontrols {
         position:fixed;

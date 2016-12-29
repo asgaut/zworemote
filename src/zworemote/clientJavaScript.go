@@ -49,7 +49,7 @@ function updateURL() {
     window.history.pushState(currentParams, 'ZWO Remote', '?' + serializeCurrentParams());
 }
 function runSeries() {
-    clearTimeout(zoomTimer);
+    stopZoom();
     var seriesURL = "series?" + serializeCurrentParams() + "&d=16";
     httpGet(seriesURL, function(data) { console.log(data)});
 }
@@ -174,18 +174,18 @@ function adjustExposureEnd(event) {
     updateCam();
 }
 function imageClick(event) {
-    clearTimeout(zoomTimer);
     var imgClick = getClickPosition(event);
 //            ws.send(JSON.stringify({method: "set_lock_position",
 //                params: [imgClick.x, imgClick.y], id: 42}));
 
+    zooming = true;
     updateZoom(imgClick.x, imgClick.y);
     var marker = document.getElementById("marker");
     marker.style.top = imgClick.y - 10;
     marker.style.left = imgClick.x - 10;
     showMarker("select");
 };
-var zoomTimer;
+var zooming = true;
 function updateZoom(x, y) {
     var e = currentParams["e"];
     var g = currentParams["g"];
@@ -200,10 +200,23 @@ function updateZoom(x, y) {
     if (coords.y >= 240) {
         coords.y -= 240;
     }
-    zoomElement.src = src="cam.jpg?" + serializeCurrentParams() + graphsClause + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y + "&r=" + rand();
+    zoomElement.onload = function () {
+        if (!zooming) {
+            return;
+        }
+        updateZoom(x, y);
+        updateStats();
+    }
+    zoomElement.src = "cam.jpg?" + serializeCurrentParams() + graphsClause + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y + "&r=" + rand();
     zoomElement.style.top = y - 120 + "px";
     zoomElement.style.left = x - 160 + "px";
-    zoomTimer = setTimeout(function() { updateZoom(x, y); }, parseFloat(e) + 200.0);
+    var zoomStats = document.getElementById("zoomstats");
+    zoomStats.style.top = y - 120 + "px";
+    zoomStats.style.left = x - 160 + "px";
+}
+function stopZoom() {
+    stopZoom();
+    var zoomStats = document.getElementById("zoomstats");
 }
 function guide() {
     console.log("guide");
@@ -248,10 +261,13 @@ function toggleSolved() {
     }
 }
 function toggleGraphs() {
+    var zoomStats = document.getElementById("zoomstats");
     if (currentParams["graphs"] == "all") {
         delete currentParams["graphs"];
+        zoomStats.style.display = "none";
     } else {
         currentParams["graphs"] = "all";
+        zoomStats.style.display = "block";
     }
 }
 function processInfo(data) {
@@ -392,17 +408,22 @@ function adjustSizes() {
     solvedElement.style.width = camElement.width;
     solvedElement.style.height = camElement.height;
 }
+function updateStats() {
+    httpGet("cam.json", function(text) {
+        var stats = JSON.parse(text);
+        var display = document.getElementById("bldisplay");
+        display.innerHTML = parseFloat(stats["temperature"]) + " &deg;C";
+        var zoomStats = document.getElementById("zoomstats");
+        zoomStats.innerHTML = stats["FWHM"];
+    });
+}
 window.onresize = function(event)  {
     adjustSizes();
 }
 window.onload = function() {
     getQueryParams();
     updateCam();
-    httpGet("cam.json", function(text) {
-        var stats = JSON.parse(text);
-        var display = document.getElementById("bldisplay");
-        display.innerHTML = parseFloat(stats["temperature"]) + " &deg;C";
-    });
+    updateStats();
     updateInputFields();
 }
 

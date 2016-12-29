@@ -64,6 +64,7 @@ package zworemote
                 <rect x="0" y="0" width="20" height="20" stroke="red" stroke-width="4" fill="none" />
             </g>
         </svg>
+        <div id="zoomstats" class="zoomstats" style="display: none; position: absolute; top: 0; left: 0;">42</div>
     </div>
     <div class="rcontrols" >
       <div class="rcinner" >

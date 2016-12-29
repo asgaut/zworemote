@@ -216,6 +216,7 @@ func GetStats() map[string]string {
     stats := map[string]string{}
 
     stats["temperature"] = strconv.FormatFloat(GetTemperature(), 'E', -1, 32)
+    stats["FWHM"] = fmt.Sprintf("%d", GetFWHM())
 
     return stats
 }
@@ -328,6 +329,7 @@ fmt.Println("                                      min: ", min, " max: ", max)
     return (max - min) / float64(pixelCount)
 }
 
+var lastFWHM = 0
 func MarkStars(img image.Image) image.Image {
     bounds := img.Bounds()
     outImage := image.NewRGBA(image.Rect(0, 0, bounds.Dx(), bounds.Dy()))
@@ -358,7 +360,7 @@ func MarkStars(img image.Image) image.Image {
     red := color.RGBA{255, 0, 0, 255}
     blue := color.RGBA{0, 0, 255, 255}
     green := color.RGBA{0, 255, 0, 255}
-    swath := 20
+    swath := 5
 
     if (pixelTotal > 0) {
         cX := int(centerX / pixelTotal)
@@ -408,6 +410,7 @@ func MarkStars(img image.Image) image.Image {
             draw.Draw(outImage, image.Rect(x - 1, cY - 1, x + 1, cY + 1), &image.Uniform{red}, image.ZP, draw.Src)
         }
 
+        lastFWHM = halfMaxX
         draw.Draw(outImage, image.Rect(cX - 5, cY - 5, cX + 5, cY + 5), &image.Uniform{red}, image.ZP, draw.Src)
         draw.Draw(outImage, image.Rect(currentMaxX - halfMaxX, cY - swath, currentMaxX - halfMaxX + 1, cY + swath), &image.Uniform{blue}, image.ZP, draw.Src)
         draw.Draw(outImage, image.Rect(currentMaxX + halfMaxX, cY - swath, currentMaxX + halfMaxX + 1, cY + swath), &image.Uniform{blue}, image.ZP, draw.Src)
@@ -422,6 +425,10 @@ func abs(x int) int {
         return -x
     }
     return x
+}
+
+func GetFWHM() int {
+    return lastFWHM
 }
 
 func encodePNG(imageWriter io.Writer, image image.Image) {
