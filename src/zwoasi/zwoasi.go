@@ -25,7 +25,7 @@ import "unsafe"
 /*
 #cgo CFLAGS: -I.
 //#cgo LDFLAGS: -lstdc++ –framework Foundation -lobjc.A -lusb-1.0 -L/Users/goddards/Documents/development/zworemote/src/zwoasi -lASICamera2 -v
-#cgo LDFLAGS: -framework CoreFoundation -framework IOKit -lstdc++ -L/usr/local/lib  -lusb-1.0 -L${SRCDIR} -lASICamera2 -lEFWFilter -v
+#cgo LDFLAGS: -lstdc++ -L/usr/local/lib  -lusb-1.0 -L${SRCDIR} -lASICamera2 -v
 
 #ifdef WIN32
 #include <windows.h>
@@ -35,7 +35,7 @@ import "unsafe"
 #include <unistd.h> // for usleep
 #endif
 
-void sleep_ms(int milliseconds) { // cross-platform sleep function
+static void sleep_ms(int milliseconds) { // cross-platform sleep function
 #ifdef WIN32
     Sleep(milliseconds);
 #elif _POSIX_C_SOURCE >= 199309L
@@ -53,7 +53,6 @@ void sleep_ms(int milliseconds) { // cross-platform sleep function
 #include <string.h>
 #include <stdbool.h>
 #include "ASICamera2.h"
-#include "EFW_filter.h"
 
 #define MAX_CONTROL 7
 
@@ -61,7 +60,6 @@ char* bayer[] = {"RG","BG","GR","GB"};
 char* controls[MAX_CONTROL] = {"Exposure", "Gain", "Gamma", "WB_R", "WB_B", "Brightness", "USB Traffic"};
 
 int CamNum = 0;
-int FilterNum = 0;
 
 void asiOpenCamera()  {
     int numDevices = ASIGetNumOfConnectedCameras();
@@ -178,75 +176,6 @@ unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, 
     return(imageData);
 }
 
-EFW_INFO EFWInfo;
-
-void asiOpenFilter()  {
-    int numFilters = EFWGetNum();
-    if (numFilters < 1) {
-        printf("No filter wheel connected\n");
-    }
-
-    printf("Filter Wheels:\n");
-    for (int i = 0; i < numFilters; i++) {
-        EFWGetID(i, &EFWInfo.ID);
-        EFWGetProperty(EFWInfo.ID, &EFWInfo);
-        printf("%d: %s\n", i, EFWInfo.Name);
-    }
-
-    if (EFWOpen(FilterNum) != EFW_SUCCESS) {
-        printf("Unable to open filter wheel.\n");
-    }
-
-}
-
-void asiSetFilterPosition(int position)  {
-
-    position -= 1;
-
-    EFW_ERROR_CODE err;
-    while (true) {
-        err = EFWGetProperty(FilterNum, &EFWInfo);
-        if (err != EFW_ERROR_MOVING ) {
-            break;
-        }
-        sleep_ms(500);
-    }
-    printf("%d slots: ", EFWInfo.slotNum);
-    for (int i = 0; i < EFWInfo.slotNum; i++) {
-        printf("%d ", i + 1);
-    }
-    int currentSlot;
-    while(true) {
-        err = EFWGetPosition(FilterNum, &currentSlot);
-        if (err != EFW_SUCCESS || currentSlot != -1 ) {
-            break;
-        }
-        sleep_ms(500);
-    }
-    printf("\ncurrent position: %d\n", currentSlot + 1);
-
-    err = EFWSetPosition(FilterNum, position);
-    if (err == EFW_SUCCESS) {
-        printf("\nMoving...\n");
-    } else {
-        printf("Failed to move filter wheel.\n");
-        return;
-    }
-    while(true) {
-        err = EFWGetPosition(FilterNum, &currentSlot);
-        if (err != EFW_SUCCESS || currentSlot != -1 ) {
-            break;
-        }
-        sleep_ms(500);
-    }
-    printf("\ncurrent position: %d\n", currentSlot + 1);
-
-}
-
-void asiCloseFilter()  {
-    EFWClose(FilterNum);
-}
-
 */
 import "C"
 
@@ -254,12 +183,10 @@ var mutex = &sync.Mutex{}
 
 func OpenCamera() {
     C.asiOpenCamera()
-    C.asiOpenFilter()
 }
 
 func CloseCamera() {
     C.asiCloseCamera()
-    C.asiCloseFilter()
 }
 
 func GetTemperature() float64 {
@@ -326,10 +253,6 @@ func GetImage(x int, y int, width int, height int, depth int, exposure float64, 
     C.free(unsafe.Pointer(greyCBytes))
     
     return resultImage
-}
-
-func SetFilterPosition(position int) {
-    C.asiSetFilterPosition(C.int(position))
 }
 
 func swab(bytes []byte) {

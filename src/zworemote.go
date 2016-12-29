@@ -22,6 +22,7 @@ import "strconv"
 import "net/http"
 import "log"
 import "zwoasi"
+import "zwoefw"
 import "zworemote"
 //import "encoding/json"
 
@@ -33,12 +34,14 @@ func main() {
     flag.Parse()
 
     zwoasi.OpenCamera()
+    zwoefw.OpenFilter()
 
     sigChan := make(chan os.Signal, 1)
     signal.Notify(sigChan, os.Interrupt)
     go func(){
         for _ = range sigChan {
             zwoasi.CloseCamera()
+            zwoefw.CloseFilter()
             fmt.Println("Camera closed.")
             os.Exit(0)
         }
@@ -74,7 +77,7 @@ func main() {
     http.HandleFunc("/zworemote/filter", func(w http.ResponseWriter, r *http.Request) {
         fmt.Fprintf(w, "filter position")
         f := formInt(r, "f")
-        zwoasi.SetFilterPosition(f)
+        zwoefw.SetFilterPosition(f)
     })
 
     log.Print("http.ListenAndServe")
@@ -101,7 +104,7 @@ func handleSeries(w http.ResponseWriter, r *http.Request) {
     }
     f := formInt(r, "f")
     if (f != 0) {
-        zwoasi.SetFilterPosition(f)
+        zwoefw.SetFilterPosition(f)
     }
 
     config := zwoasi.CaptureConfig{}
