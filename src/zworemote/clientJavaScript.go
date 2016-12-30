@@ -25,10 +25,16 @@ ws.onmessage = function(msg) {console.log(msg.data);
        showMarker("lost");
     };
 };
-
+var camLooping = false;
 function updateCam() {
     var camImg = document.getElementById("cam");
     camImg.src = "cam.jpg?" + serializeCurrentParams();
+    camImg.onload = function () {
+        if (!camLooping) {
+            return;
+        }
+        updateCam();
+    }
     updateURL();
 }
 function updateSeriesCount(field) {
@@ -42,7 +48,7 @@ function serializeCurrentParams() {
     var gClause = g ? "&g=" + g : "";
     var n = currentParams["n"];
     var nClause = n ? "&n=" + n : "&n=3";
-    var query = eClause + gClause + nClause + "&r=" + rand();
+    var query = eClause + gClause + nClause;
     return query;
 }
 function updateURL() {
@@ -179,13 +185,14 @@ function imageClick(event) {
 //                params: [imgClick.x, imgClick.y], id: 42}));
 
     zooming = true;
+    camLooping = false;
     updateZoom(imgClick.x, imgClick.y);
     var marker = document.getElementById("marker");
     marker.style.top = imgClick.y - 10;
     marker.style.left = imgClick.x - 10;
     showMarker("select");
 };
-var zooming = true;
+var zooming = false;
 function updateZoom(x, y) {
     var e = currentParams["e"];
     var g = currentParams["g"];
@@ -207,16 +214,20 @@ function updateZoom(x, y) {
         updateZoom(x, y);
         updateStats();
     }
-    zoomElement.src = "cam.jpg?" + serializeCurrentParams() + graphsClause + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y + "&r=" + rand();
+    zoomElement.src = "cam.jpg?" + serializeCurrentParams() + graphsClause + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y;
     zoomElement.style.top = y - 120 + "px";
     zoomElement.style.left = x - 160 + "px";
+    zoomElement.style.display = "block";
     var zoomStats = document.getElementById("zoomstats");
     zoomStats.style.top = y - 120 + "px";
     zoomStats.style.left = x - 160 + "px";
 }
 function stopZoom() {
-    stopZoom();
+    zooming = false;
+    var zoomElement = document.getElementById("zoom");
+    zoomElement.style.display = "none";
     var zoomStats = document.getElementById("zoomstats");
+    zoomStats.style.display = "none";
 }
 function guide() {
     console.log("guide");
@@ -270,6 +281,16 @@ function toggleGraphs() {
         zoomStats.style.display = "block";
     }
 }
+function toggleLooping() {
+    if (camLooping || zooming) {
+        camLooping = false;
+        stopZoom();
+        return;
+    }
+    camLooping = true;
+    updateCam();
+}
+
 function processInfo(data) {
     var newInfo = data.split("\n");
     for (index in newInfo) {

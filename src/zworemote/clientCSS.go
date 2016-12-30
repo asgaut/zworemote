@@ -31,13 +31,16 @@ package zworemote
     display: flex;
     flex-direction: column;
   }
-  .brcontrols a, .trcontrols a {
+  .brcontrols a, .tcontrols a, .trcontrols a {
     display:block;
     padding:10px;
     margin:10px;
     font-size:20px;
     border-radius:8px;
     background:red;
+  }
+  .tcontrols a {
+    width: 40px;
   }
   .trinner {
     align-self: center;

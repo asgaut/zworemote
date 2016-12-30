@@ -146,6 +146,7 @@ func getStampedFile(prefix string) *os.File {
 }
 
 func handleImageRequest(writerFunc func(origin image.Point, width int, height int, depth int, exposure float64, gain float64, config zwoasi.CaptureConfig, imageWriter io.Writer) image.Image, w http.ResponseWriter, r *http.Request) {
+    start := time.Now()
     x := formInt(r, "x")
     y := formInt(r, "y")
     origin := image.Point{x, y}
@@ -158,6 +159,8 @@ func handleImageRequest(writerFunc func(origin image.Point, width int, height in
     config.Graphs = r.FormValue("graphs")
 
     writerFunc(origin, width, height, depth, e, g, config, w)
+    elapsed := time.Since(start)
+    fmt.Printf("handleImageRequest took %s\n", elapsed)
 }
 
 func formInt(r *http.Request, name string) int {

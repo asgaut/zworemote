@@ -145,9 +145,15 @@ unsigned char* asiGetImage(char *fileName, int x, int y, int width, int height, 
     unsigned char* imageData;
     imageData = (unsigned char*) malloc(imageSize);
 
-    printf("Setting exposure %f gain %f\n", exposure, gain);
-
-    ASISetControlValue(CamNum, ASI_GAIN, gain, ASI_FALSE);
+    //TODO: autoGain not working, investigate video streaming
+    ASI_BOOL autoGain = (gain < 0) ? 1 : 0;
+    if (autoGain) {
+        ASISetControlValue(CamNum, ASI_BRIGHTNESS, 100.0, ASI_TRUE);
+        ASISetControlValue(CamNum, ASI_GAMMA, 100.0, ASI_TRUE);
+        gain = 1;
+    }
+    printf("Setting exposure %f gain %f Auto %d\n", exposure, gain, autoGain);
+    ASISetControlValue(CamNum, ASI_GAIN, gain, autoGain);
     ASISetControlValue(CamNum, ASI_EXPOSURE, exposure * 1000, ASI_FALSE);
     ASISetControlValue(CamNum, ASI_BANDWIDTHOVERLOAD, 45, ASI_FALSE);
 
@@ -232,7 +238,7 @@ func GetImage(x int, y int, width int, height int, depth int, exposure float64, 
     greyCBytes := C.asiGetImage(C.CString(""), C.int(x), C.int(y), C.int(width), C.int(height), C.int(depth), C.double(exposure), C.double(gain), &widthC, &heightC, &lenC)
     mutex.Unlock()
     elapsed := time.Since(start)
-    fmt.Printf("Exposure took %s\n", elapsed)
+    fmt.Printf("asiGetImage took %s\n", elapsed)
 
     greyBytes := C.GoBytes(unsafe.Pointer(greyCBytes), lenC)
 
@@ -288,7 +294,9 @@ func writeEncodedImage(encoder func (imageWriter io.Writer, image image.Image), 
 
     greyImage := GetImage(x, y, width, height, depth, exposure, gain)
 
-    fmt.Println("Contrast ", GetContrast(greyImage))
+    if ("C" == config.Graphs) {
+        fmt.Println("Contrast ", GetContrast(greyImage))
+    }
 
     if ("all" == config.Graphs) {
         start := time.Now()
@@ -436,7 +444,7 @@ func encodePNG(imageWriter io.Writer, image image.Image) {
 }
 
 func encodeJPG(imageWriter io.Writer, image image.Image) {
-    quality := 30
+    quality := 60
     bounds := image.Bounds()
     if (bounds.Max.Y - bounds.Min.Y < 1000) {
         quality = 90

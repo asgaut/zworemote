@@ -21,7 +21,7 @@ package zworemote
             onerror="this.style.display='none';"
             style="position: absolute; top: 0; left: 0;">
         <img id="zoom"
-            style="-webkit-filter:brightness(140%%)contrast(300%%);position: absolute; top: 0; left: 0;width:320px;height:240px;">
+            style="display: none; -webkit-filter:brightness(140%%)contrast(300%%);position: absolute; top: 0; left: 0;width:320px;height:240px;">
         <svg id="bull" width="100%%" height="100%%" style="opacity:0; position: absolute; top: 0; left: 0;">
             <g >
                 <line x1="0px" y1="50%%" x2="100%%" y2="50%%" stroke="red" stroke-width="1" />
@@ -90,9 +90,16 @@ package zworemote
         <a onclick="loop()">LOOP</a>
       </div>
     </div>
-    <div class="tcontrols" style="display:none;">
+    <div class="tcontrols" >
       <div class="tcinner" >
-        <input onchange="findField(this.value);" >
+        <input style="display:none;" onchange="findField(this.value);" >
+        <a onclick="toggleLooping()">
+            <svg width="40px" height="40px"><g>
+                <circle cx="20" cy="20" r="10" stroke="black" stroke-width="1" fill="none" stroke-dasharray="1, 1"/>
+                <line x1="6" y1="13" x2="13" y2="14" stroke="black" stroke-width="1"/>
+                <line x1="13" y1="21" x2="13" y2="14" stroke="black" stroke-width="1"/>
+            </g></svg>
+        </a>
       </div>
     </div>
     <div class="trcontrols" >
