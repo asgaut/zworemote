@@ -15,12 +15,12 @@ package zworemote
     </head>
     <body>
     <div class="imgBox" onclick="imageDispatch(event)">
-        <img id="cam"  onclick="imageClick(event)" onload="adjustSizes()"
+        <img id="cam" onclick="imageClick(event)" onload="adjustSizes()"
             style="-webkit-filter:brightness(140%%)contrast(300%%);position: relative; top: 0; left: 0;height:100%%;">
         <img id="solvedfield" onload="adjustSizes()" onclick="solvedClick(event)"
             onerror="this.style.display='none';"
             style="position: absolute; top: 0; left: 0;">
-        <img id="zoom"
+        <img id="zoom" class="zoom"
             style="display: none; -webkit-filter:brightness(140%%)contrast(300%%);position: absolute; top: 0; left: 0;width:320px;height:240px;">
         <svg id="bull" width="100%%" height="100%%" style="opacity:0; position: absolute; top: 0; left: 0;">
             <g >

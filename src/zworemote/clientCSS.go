@@ -8,7 +8,7 @@ package zworemote
     background: red;
   }
   .imgBox {
-    position: relative;+
+    position: relative;
     left: 0;
     top: 0;
   }
@@ -62,6 +62,9 @@ package zworemote
   .zoomstats {
     color: red;
     font-size:20px;
+  }
+  .zoom {
+    border: 0.5px solid firebrick;
   }
   @media (max-width: 640px) {
       .bcontrols {

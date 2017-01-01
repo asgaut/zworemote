@@ -12,7 +12,7 @@ import "io"
 import "image"
 import "os"
 import "os/signal"
-//import "os/exec"
+import "os/exec"
 //import "path/filepath"
 //import "strings"
 import "regexp"
@@ -61,6 +61,23 @@ func main() {
         w.Header().Set("Content-Type", "image/jpeg")
         w.Header().Set("Cache-Control", "no-store")
         handleImageRequest(zwoasi.WriteJPGImage, w, r)
+    })
+
+    http.HandleFunc("/zworemote/cam.mp4", func(w http.ResponseWriter, r *http.Request) {
+        //starting point for video stream piped to ffmpeg
+        w.Header().Set("Content-Type", "video/mp4")
+        w.Header().Set("Cache-Control", "no-store")
+        cmd := exec.Command("fgrep", "cat")
+        stdin, err := cmd.StdinPipe()
+        if nil != err { log.Println(err.Error()) }
+        stdout, err := cmd.StdoutPipe()
+        if nil != err { log.Println(err.Error()) }
+        cmd.Start()
+        fmt.Fprintf(stdin, "commands are\n")
+        fmt.Fprintf(stdin, "concatenated\n")
+        fmt.Fprintf(stdin, "regularly\n")
+        stdin.Close()
+        _, err = io.Copy(w, stdout)
     })
 
     http.HandleFunc("/zworemote/series", func(w http.ResponseWriter, r *http.Request) {

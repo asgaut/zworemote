@@ -187,11 +187,55 @@ function imageClick(event) {
     zooming = true;
     camLooping = false;
     updateZoom(imgClick.x, imgClick.y);
-    var marker = document.getElementById("marker");
-    marker.style.top = imgClick.y - 10;
-    marker.style.left = imgClick.x - 10;
-    showMarker("select");
+//    var marker = document.getElementById("marker");
+//    marker.style.top = imgClick.y - 10;
+//    marker.style.left = imgClick.x - 10;
+//    showMarker("select");
 };
+function zoomClick(event) {
+    var zoomElement = document.getElementById("zoom");
+    if ("none" == zoomElement.style.display) {
+        return false;
+    }
+    var dim = getDimensions(zoomElement);
+    if ((event.x < dim.left) || (event.y < dim.top)) {
+        return false;
+    }
+    if ((event.x > dim.left + dim.width) || (event.y > dim.top + dim.height)) {
+        return false;
+    }
+    toggleZoom(zoomElement);
+    placeZoom(zoomElement, dim.left + dim.width / 2, dim.top + dim.height / 2);
+    return true;
+}
+function getDimensions(element) {
+    var dimensions = { };
+    dimensions.width = parseInt(element.style.width);
+    dimensions.height = parseInt(element.style.height);
+    dimensions.top = parseInt(element.style.top);
+    dimensions.left = parseInt(element.style.left);
+    return dimensions;
+}
+function placeZoom(zoomElement, x, y) {
+    if ("320px" == zoomElement.style.width) {
+        zoomElement.style.width = 320 + "px";
+        zoomElement.style.height = 240 + "px";
+        zoomElement.style.left = x - 160 + "px";
+        zoomElement.style.top = y - 120 + "px";
+    } else {
+        zoomElement.style.width = 640 + "px";
+        zoomElement.style.height = 480 + "px";
+        zoomElement.style.left = x - 320 + "px";
+        zoomElement.style.top = y - 240 + "px";
+    }
+}
+function toggleZoom(zoomElement) {
+    if ("320px" == zoomElement.style.width) {
+        zoomElement.style.width = 640 + "px";
+    } else {
+        zoomElement.style.width = 320 + "px";
+    }
+}
 var zooming = false;
 function updateZoom(x, y) {
     var e = currentParams["e"];
@@ -215,12 +259,12 @@ function updateZoom(x, y) {
         updateStats();
     }
     zoomElement.src = "cam.jpg?" + serializeCurrentParams() + graphsClause + "&w=640&h=480&x=" + coords.x + "&y=" + coords.y;
-    zoomElement.style.top = y - 120 + "px";
-    zoomElement.style.left = x - 160 + "px";
+
+    placeZoom(zoomElement, x, y);
     zoomElement.style.display = "block";
     var zoomStats = document.getElementById("zoomstats");
-    zoomStats.style.top = y - 120 + "px";
-    zoomStats.style.left = x - 160 + "px";
+    zoomStats.style.top = zoomElement.style.top;
+    zoomStats.style.left = zoomElement.style.left;
 }
 function stopZoom() {
     zooming = false;
@@ -365,6 +409,9 @@ function depositMarker(label, scaledRA, scaledDEC) {
 }
 function imageDispatch(event) {
     var solvedElement = document.getElementById("solvedfield");
+    if (zoomClick(event)) {
+        return
+    }
     if (solvedElement.style["opacity"] > 0) {
         solvedClick(event);
     } else {

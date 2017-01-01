@@ -350,17 +350,20 @@ func MarkStars(img image.Image) image.Image {
     for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
         for x := bounds.Min.X; x < bounds.Max.X; x++ {
             r, g, b, a := outImage.At(x, y).RGBA()
+            g = g
+            b = b
+            a = a
             if (int(r) > imageMax) {
                 imageMax = int(r)
             }
             if (r > 25000) {
-                outImage.Set(x, y, color.RGBA64{uint16(r), 0, 0, uint16(a)})
+//                outImage.Set(x, y, color.RGBA64{uint16(r), 0, 0, uint16(a)})
                 centerX += int64(x)
                 centerY += int64(y)
                 pixelTotal += 1
 
             } else {
-                outImage.Set(x, y, color.RGBA64{uint16(r), uint16(g), uint16(b), uint16(a)})
+//                outImage.Set(x, y, color.RGBA64{uint16(r), uint16(g), uint16(b), uint16(a)})
             }
         }
     }
@@ -371,7 +374,7 @@ func MarkStars(img image.Image) image.Image {
     swath := 5
 
     if (pixelTotal > 0) {
-        cX := int(centerX / pixelTotal)
+//        cX := int(centerX / pixelTotal)
         cY := int(centerY / pixelTotal)
 
         currentMax := 0
@@ -412,14 +415,16 @@ func MarkStars(img image.Image) image.Image {
                 }
             }
             draw.Draw(outImage, image.Rect(x, gY - 1, x + 1, gY + 1), &image.Uniform{green}, image.ZP, draw.Src)
-
-            draw.Draw(outImage, image.Rect(x - 1, cY - swath, x + 1, cY - swath + 1), &image.Uniform{red}, image.ZP, draw.Src)
-            draw.Draw(outImage, image.Rect(x - 1, cY + swath, x + 1, cY + swath + 1), &image.Uniform{red}, image.ZP, draw.Src)
-            draw.Draw(outImage, image.Rect(x - 1, cY - 1, x + 1, cY + 1), &image.Uniform{red}, image.ZP, draw.Src)
         }
 
         lastFWHM = halfMaxX
-        draw.Draw(outImage, image.Rect(cX - 5, cY - 5, cX + 5, cY + 5), &image.Uniform{red}, image.ZP, draw.Src)
+
+        for x := bounds.Min.X; x < bounds.Max.X; x++ {
+            if (abs(x - currentMaxX) > lastFWHM) {
+                draw.Draw(outImage, image.Rect(x, cY, x + 1, cY + 1), &image.Uniform{red}, image.ZP, draw.Src)
+            }
+        }
+    
         draw.Draw(outImage, image.Rect(currentMaxX - halfMaxX, cY - swath, currentMaxX - halfMaxX + 1, cY + swath), &image.Uniform{blue}, image.ZP, draw.Src)
         draw.Draw(outImage, image.Rect(currentMaxX + halfMaxX, cY - swath, currentMaxX + halfMaxX + 1, cY + swath), &image.Uniform{blue}, image.ZP, draw.Src)
     }
