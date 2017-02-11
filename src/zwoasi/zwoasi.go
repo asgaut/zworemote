@@ -73,6 +73,9 @@ void asiOpenCamera()  {
     if (ASIOpenCamera(CamNum) != ASI_SUCCESS) {
         printf("OpenCamera error\n");
     }
+    if (ASIInitCamera(CamNum) != ASI_SUCCESS) {
+        printf("InitCamera error\n");
+    }
     printf("%s information\n",ASICameraInfo.Name);
     int iMaxWidth, iMaxHeight;
     iMaxWidth = ASICameraInfo.MaxWidth;

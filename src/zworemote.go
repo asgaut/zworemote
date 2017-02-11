@@ -117,7 +117,7 @@ func handleSeries(w http.ResponseWriter, r *http.Request) {
     g := formFloat(r, "g")
     prefix := r.FormValue("p")
     if (!validPrefix.MatchString(prefix)) {
-        prefix = "cam"
+        prefix = "c"
     }
     f := formInt(r, "f")
     if (f != 0) {
@@ -153,7 +153,7 @@ func handleSeries(w http.ResponseWriter, r *http.Request) {
 
 func getStampedFile(prefix string) *os.File {
     now := time.Now()
-    fileName := fmt.Sprintf("/tmp/%s%d%02d%02d-%02d.%02d.%02d-%x.png",
+    fileName := fmt.Sprintf("/tmp/%s_%d%02d%02d-%02d.%02d.%02d-%x.png",
             prefix,
             now.Year(), now.Month(), now.Day(),
             now.Hour(), now.Minute(), now.Second(), now.Nanosecond() / 1000)
