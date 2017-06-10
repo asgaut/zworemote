@@ -1,12 +1,15 @@
-// Copyright 2016 Ted Goddard. All rights reserved.
+// Copyright 2017 Ted Goddard. All rights reserved.
 // Use of this source code is governed the MIT
 // license that can be found in the LICENSE file.
 
 package zwoefw
 
 /*
-#cgo CFLAGS: -I.
-#cgo LDFLAGS: -framework CoreFoundation -framework IOKit -lstdc++ -L/usr/local/lib  -lusb-1.0 -L${SRCDIR} -lEFWFilter -v
+#cgo CFLAGS: -std=c11 -I${SRCDIR}/include
+#cgo darwin LDFLAGS: -framework CoreFoundation -framework IOKit -L${SRCDIR}/lib/mac
+#cgo linux LDFLAGS: -ludev -L${SRCDIR}/lib/armv7
+#cgo LDFLAGS: -lstdc++ -L/usr/local/lib  -lusb-1.0 -lEFWFilter -v
+
 
 #ifdef WIN32
 #include <windows.h>

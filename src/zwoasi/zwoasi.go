@@ -1,4 +1,4 @@
-// Copyright 2016 Ted Goddard. All rights reserved.
+// Copyright 2017 Ted Goddard. All rights reserved.
 // Use of this source code is governed the MIT
 // license that can be found in the LICENSE file.
 
@@ -23,9 +23,11 @@ import "encoding/json"
 import "unsafe"
 
 /*
-#cgo CFLAGS: -I.
+#cgo CFLAGS: -std=c11 -I${SRCDIR}/include
 //#cgo LDFLAGS: -lstdc++ –framework Foundation -lobjc.A -lusb-1.0 -L/Users/goddards/Documents/development/zworemote/src/zwoasi -lASICamera2 -v
-#cgo LDFLAGS: -lstdc++ -L/usr/local/lib  -lusb-1.0 -L${SRCDIR} -lASICamera2 -v
+#cgo darwin LDFLAGS: -L${SRCDIR}/lib/mac
+#cgo linux LDFLAGS: -L${SRCDIR}/lib/armv7 -ludev
+#cgo LDFLAGS: -lstdc++ -L/usr/local/lib  -lusb-1.0 -lm -lASICamera2 -v
 
 #ifdef WIN32
 #include <windows.h>
@@ -382,7 +384,7 @@ func MarkStars(img image.Image) image.Image {
 
         currentMax := 0
         currentMaxX := 0
-        halfMaxDelta := math.MaxInt64
+        halfMaxDelta := int64(math.MaxInt64)
         halfMax := 0
         halfMaxX := 0
         halfMaxQuest := true
@@ -409,7 +411,7 @@ func MarkStars(img image.Image) image.Image {
                 halfMaxQuest = true
             }
             if (halfMaxQuest) {
-                delta := abs(halfMax - accumY)
+                delta := int64(abs(halfMax - accumY))
                 if (delta < halfMaxDelta) {
                     halfMaxDelta = delta
                     halfMaxX = x - currentMaxX
