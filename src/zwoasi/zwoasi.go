@@ -306,7 +306,9 @@ func writeEncodedImage(encoder func (imageWriter io.Writer, image image.Image), 
         greyImage = MarkStars(greyImage)
         elapsed := time.Since(start)
         fmt.Printf("MarkStars took %s\n", elapsed)
-    }
+    } else {
+averageImage = nil
+}
 
     bufWriter := bufio.NewWriter(imageWriter)
     encoder(bufWriter, greyImage)
@@ -340,11 +342,73 @@ fmt.Println("                                      min: ", min, " max: ", max)
     return (max - min) / float64(pixelCount)
 }
 
+var averageMax = uint16(255)
+var averageImage *image.Gray16
 var lastFWHM = 0
 func MarkStars(img image.Image) image.Image {
     bounds := img.Bounds()
+    if averageImage == nil {
+        averageImage = image.NewGray16(image.Rect(0, 0, bounds.Dx(), bounds.Dy()))
+//        averageImage = image.NewGray16(image.Rect(0, 0, bounds.Dx(), bounds.Dy()))
+    }
     outImage := image.NewRGBA(image.Rect(0, 0, bounds.Dx(), bounds.Dy()))
-    draw.Draw(outImage, outImage.Bounds(), img, bounds.Min, draw.Src)
+//    draw.Draw(outImage, outImage.Bounds(), img, bounds.Min, draw.Src)
+
+    thisMax := uint16(0)
+//    f := uint16(65535 / averageMax)
+    for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+        for x := bounds.Min.X; x < bounds.Max.X; x++ {
+            r, g, b, a := averageImage.At(x, y).RGBA()
+            r1, g1, b1, a1 := img.At(x, y).RGBA()
+if (x == 70) && (y == 70) {
+fmt.Println("    ", r, r1)
+fmt.Println("    ", r1, uint32(uint8(r1)))
+}
+//            rM := uint8(((r + r1) / 2) & 0xff)
+//            rM := uint8(((uint8(r) + uint8(r1)) / 2) )
+//            gM := uint8(((uint8(g) + uint8(g1)) / 2) )
+//            bM := uint8(((uint8(b) + uint8(b1)) / 2) )
+//            aM := uint8(((uint8(a) + uint8(a1)) / 2) )
+
+
+//            rM := uint8((((r>>8) *2 + (r1>>8)) / 3) )
+//            gM := uint8((((g>>8) *2 + (g1>>8)) / 3) )
+//            bM := uint8((((b>>8) *2 + (b1>>8)) / 3) )
+//            aM := uint8((((a>>8) *2+ (a1>>8)) / 3) )
+
+            rM := uint16((r * 7 + r1) >> 3)
+            gM := uint16((g * 7 + g1) >> 3)
+            bM := uint16((b * 7 + b1) >> 3)
+            aM := uint16((a * 7 + a1) >> 3)
+
+            total := (rM + gM + bM)
+            if (total > thisMax) {
+                thisMax = total
+            }
+//            if (rM > thisMax) {
+//                thisMax += rM / 10
+//            }
+//            if (gM > thisMax) {
+//                thisMax += gM / 10
+//            }
+//            if (bM > thisMax) {
+//                thisMax += bM / 10
+//            }
+
+
+            color16 := color.RGBA64{rM, gM, bM, aM}
+            averageImage.Set(x, y, color16)
+//            outImage.Set(x, y, color.RGBA{uint8((rM * f)>>8), uint8((gM * f)>>8), uint8((bM * f)>>8), uint8(aM>>8)})
+            outImage.Set(x, y, color.RGBA{uint8((rM)>>8), uint8((gM)>>8), uint8((bM)>>8), uint8(aM>>8)})
+//            outImage.Set(x, y, color.RGBA{0, 0, 255, 255})
+//            outImage.Set(x, y, color.RGBA{uint8(g1), uint8(r1), uint8(b1), uint8(a1)})
+            
+        }
+    }
+    averageMax = thisMax
+fmt.Println("    max:", averageMax)
+
+
 
     centerX := int64(0)
     centerY := int64(0)
