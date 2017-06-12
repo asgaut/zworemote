@@ -7,8 +7,9 @@ package zwoefw
 /*
 #cgo CFLAGS: -std=c11 -I${SRCDIR}/include
 #cgo darwin LDFLAGS: -framework CoreFoundation -framework IOKit -L${SRCDIR}/lib/mac
-#cgo linux LDFLAGS: -ludev -L${SRCDIR}/lib/armv7
-#cgo LDFLAGS: -lstdc++ -L/usr/local/lib  -lusb-1.0 -lEFWFilter -v
+#cgo linux,arm LDFLAGS: -L${SRCDIR}/lib/armv7
+#cgo linux,amd64 LDFLAGS: -L/lib/x86_64-linux-gnu -lm -L${SRCDIR}/lib/x64
+#cgo LDFLAGS: -L/usr/local/lib  -lusb-1.0 -lEFWFilter -lstdc++ -ludev -v
 
 
 #ifdef WIN32
