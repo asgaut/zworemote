@@ -26,8 +26,10 @@ import "unsafe"
 #cgo CFLAGS: -std=c11 -I${SRCDIR}/include
 //#cgo LDFLAGS: -lstdc++ –framework Foundation -lobjc.A -lusb-1.0 -L/Users/goddards/Documents/development/zworemote/src/zwoasi -lASICamera2 -v
 #cgo darwin LDFLAGS: -L${SRCDIR}/lib/mac
-#cgo linux LDFLAGS: -L${SRCDIR}/lib/armv7 -ludev
-#cgo LDFLAGS: -lstdc++ -L/usr/local/lib  -lusb-1.0 -lm -lASICamera2 -v
+#cgo linux,arm LDFLAGS: -L${SRCDIR}/lib/armv7 -ludev
+#cgo linux,amd64 LDFLAGS: -L${SRCDIR}/lib/x64
+#cgo LDFLAGS: -L/usr/local/lib -lASICamera2 -lusb-1.0 -lm -lstdc++ -v
+
 
 #ifdef WIN32
 #include <windows.h>
