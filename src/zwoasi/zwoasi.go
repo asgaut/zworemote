@@ -23,8 +23,7 @@ import "encoding/json"
 import "unsafe"
 
 /*
-#cgo CFLAGS: -std=c11 -I${SRCDIR}/include
-//#cgo LDFLAGS: -lstdc++ –framework Foundation -lobjc.A -lusb-1.0 -L/Users/goddards/Documents/development/zworemote/src/zwoasi -lASICamera2 -v
+#cgo CFLAGS: -std=gnu11 -I${SRCDIR}/include
 #cgo darwin LDFLAGS: -L${SRCDIR}/lib/mac
 #cgo linux,arm LDFLAGS: -L${SRCDIR}/lib/armv7 -ludev
 #cgo linux,amd64 LDFLAGS: -L${SRCDIR}/lib/x64
@@ -37,6 +36,7 @@ import "unsafe"
 #include <time.h>   // for nanosleep
 #else
 #include <unistd.h> // for usleep
+#include <time.h> // for struct timespec
 #endif
 
 static void sleep_ms(int milliseconds) { // cross-platform sleep function

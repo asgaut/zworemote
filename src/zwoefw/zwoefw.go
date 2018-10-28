@@ -5,7 +5,7 @@
 package zwoefw
 
 /*
-#cgo CFLAGS: -std=c11 -I${SRCDIR}/include
+#cgo CFLAGS: -std=gnu11 -I${SRCDIR}/include
 #cgo darwin LDFLAGS: -framework CoreFoundation -framework IOKit -L${SRCDIR}/lib/mac
 #cgo linux,arm LDFLAGS: -L${SRCDIR}/lib/armv7
 #cgo linux,amd64 LDFLAGS: -L/lib/x86_64-linux-gnu -lm -L${SRCDIR}/lib/x64
@@ -19,6 +19,7 @@ package zwoefw
 #include <time.h>   // for nanosleep
 #else
 #include <unistd.h> // for usleep
+#include <time.h> // for struct timespec
 #endif
 
 static void sleep_ms(int milliseconds) { // cross-platform sleep function
