@@ -11,7 +11,7 @@ import "os/signal"
 import "strconv"
 import "net/http"
 import "log"
-import "zwoefw"
+import "zworemote/zwoefw"
 //import "encoding/json"
 
 func main() {

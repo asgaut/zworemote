@@ -1,4 +1,4 @@
-package zworemote
+package zwoclient
 
     const ClientHTML = `
 <html>

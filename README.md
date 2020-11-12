@@ -5,8 +5,8 @@ Web interface for ZWO ASI Cameras (tested on ASI1600MM) and EFW mini filter whee
 
 - Install /usr/local/lib/libusb-1.0.0.dylib
   RPi: sudo apt install libusb-1.0-0-dev libudev-dev
-- export GOPATH=$(pwd)
-- go build src/zworemote.go
+- cd src
+- go build zworemote.go
 - ./zworemote
 - Visit http://localhost:8080/zworemote/
 

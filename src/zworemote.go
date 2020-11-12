@@ -21,9 +21,9 @@ import "bufio"
 import "strconv"
 import "net/http"
 import "log"
-import "zwoasi"
-import "zwoefw"
-import "zworemote"
+import "zworemote/zwoasi"
+import "zworemote/zwoefw"
+import "zworemote/zwoclient"
 //import "encoding/json"
 
 var validPrefix = regexp.MustCompile(`^[[:alnum:]]+$`)
@@ -48,7 +48,7 @@ func main() {
     }()
 
     http.HandleFunc("/zworemote/", func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, zworemote.ClientHTML)
+        fmt.Fprintf(w, zwoclient.ClientHTML)
     })
 
     http.HandleFunc("/zworemote/cam.png", func(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +98,7 @@ func main() {
     })
 
     log.Print("http.ListenAndServe")
-    log.Fatal(http.ListenAndServe(":8080", nil))
+    log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 
 }
 
